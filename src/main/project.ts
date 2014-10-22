@@ -121,6 +121,10 @@ export interface TypeScriptProject {
      */
     getLanguageService(): ts.LanguageService;
     
+    /**
+     * return the documentRegistry used by the project
+     */
+    getDocumentRegistry(): ts.DocumentRegistry;
     
     
     //-------------------------------
@@ -187,6 +191,12 @@ export function createProject(
      * LanguageService managed by this project
      */
     var languageService: ts.LanguageService;
+    
+    
+    /**
+     * DocumentRegistry managed by this project
+     */
+    var documentRegistry: ts.DocumentRegistry
     
     /**
      * Map path to content
@@ -564,9 +574,8 @@ export function createProject(
                 libLocation = typeScriptInfo.libLocation;
                 languageServiceHost = LanguageServiceHost.create();
                 languageServiceHost.setCompilationSettings(createCompilationSettings());
-                languageService = 
-                    typeScriptInfo.typeScript.createLanguageService(languageServiceHost, 
-                        typeScriptInfo.typeScript.createDocumentRegistry());
+                documentRegistry = typeScriptInfo.typeScript.createDocumentRegistry();
+                languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, documentRegistry);
 
                 return collectFiles();
                 
@@ -634,6 +643,7 @@ export function createProject(
         update: update,
         dispose: dispose,
         getLanguageService: () => languageService,
+        getDocumentRegistry: () => documentRegistry,
         getLanguageServiceHost: () => languageServiceHost,
         getProjectFilesSet: () => utils.clone(projectFilesSet),
         getProjectFileKind: getProjectFileKind
