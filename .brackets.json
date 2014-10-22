@@ -1,0 +1,14 @@
+{
+    "spaceUnits": 4,
+    "typescript": {
+        "target": "ES5",
+        "module": "COMMONJS",
+        "noImplicitAny": true,
+        "noLib": true,
+        "sources" : [
+            "src/declarations/**/*.ts",
+            "src/commons/**/*.ts",
+            "src/main/**/*.ts"
+        ]
+    }
+}
