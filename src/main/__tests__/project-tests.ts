@@ -393,20 +393,25 @@ describe('project test', function () {
 
 
     it('should create a new typescript factory instance if a typescript path is specified', function () {
-        fileSystemMock.setFiles({
-            '/typescript/typescriptServices.js':
-            'var TypeScript = {\
-                            Services: {\
-                                TypeScriptServicesFactory: function () { \
-                                    return { \
-                                        createCoreServices: function () { return {} }, \
-                                        createPullLanguageService: function () {  return { id:\'hello\'} }\
-                                    }\
-                                }\
-                            }\
-                        };',
-            '/lib.d.ts': ''
-        });
+//        fileSystemMock.setFiles({
+//            '/typescript/typescriptServices.js':
+//            'var TypeScript = {\
+//                            Services: {\
+//                                TypeScriptServicesFactory: function () { \
+//                                    return { \
+//                                        createCoreServices: function () { return {} }, \
+//                                        createPullLanguageService: function () {  return { id:\'hello\'} }\
+//                                    }\
+//                                }\
+//                            }\
+//                        };',
+//            '/lib.d.ts': ''
+//        });
+        
+        var mockTypeScript:typeof ts = <any>jest.genMockFromModule<typeof ts>('typescript')
+        jest.setMock('/typescript/bin/typescriptServices.js', mockTypeScript);
+        
+       
 
         createProject('/', {
             sources: [
@@ -417,7 +422,7 @@ describe('project test', function () {
 
         jest.runAllTimers();
 
-        expect(typeScriptProject.getLanguageService()).toEqual({ id: 'hello' });
+        expect(mockTypeScript.createLanguageService).toBeCalled();
     });
 
 

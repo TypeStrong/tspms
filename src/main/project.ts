@@ -218,28 +218,23 @@ export function createProject(
      * Retrieve a ServiceFactory from a given typeScriptService file path
      * @param typescriptPath
      */
-    function getTypeScriptInfosForPath(typescriptPath: string): Promise<TypeScriptInfo> {
+    function getTypeScriptInfosForPath(typescriptPath: string): TypeScriptInfo {
         if (!typescriptPath) {
-            return Promise.cast({
+            return {
                 typeScript:  ts,
                 libLocation: defaultLibLocation
-            });
+            };
         } else {
-            var typescriptServicesFile = path.join(typescriptPath, 'typescriptServices.js');
-            
-            return fileSystem.readFile(typescriptServicesFile).then(code => {
-                var func = new Function('var ts;' + code + ';return ts;'),
-                    generatedTs: typeof ts = func();
-                
-
+            var typescriptServicesFile = path.join(typescriptPath, 'bin', 'typescriptServices.js');
+            try {
+                var generatedTs = require(typescriptPath);
                 return {
                     typeScript: generatedTs,
                     libLocation: path.join(typescriptPath, 'lib.d.ts')
                 };
-            })
-            //TODO instead of silently returning default we should handle this error in project
-            //manager and return an error in the linter
-            .catch(() => {
+            } catch(e) {
+                //TODO instead of silently returning default we should handle this error in project
+                //manager and return an error in the linter
                 if (logger.error()) {
                     logger.log('could not retrieve typescript compiler at path: ' + typescriptPath);
                 }
@@ -247,7 +242,7 @@ export function createProject(
                     typeScript: ts,
                     libLocation: defaultLibLocation
                 };
-            });
+            }
         }
     }
     
@@ -557,19 +552,13 @@ export function createProject(
         workingSet.documentEdited.add(documentEditedHandler);
         fileSystem.projectFilesChanged.add(filesChangeHandler);
         
-        return queue.init(
-            getTypeScriptInfosForPath(_config.typescriptPath).then(typeScriptInfo => {
-                libLocation = typeScriptInfo.libLocation;
-                languageServiceHost = LanguageServiceHost.create();
-                languageServiceHost.setCompilationSettings(createCompilationSettings());
-                languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, typeScriptInfo.typeScript.createDocumentRegistry());
-
-                return collectFiles();
-                
-            }).then(() => {
-                updateWorkingSet();
-            })
-        );
+        var typeScriptInfo = getTypeScriptInfosForPath(_config.typescriptPath);
+        libLocation = typeScriptInfo.libLocation;
+        languageServiceHost = LanguageServiceHost.create();
+        languageServiceHost.setCompilationSettings(createCompilationSettings());
+        languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, typeScriptInfo.typeScript.createDocumentRegistry());
+    
+        return queue.init(collectFiles().then(updateWorkingSet));
     }
     
     /**
