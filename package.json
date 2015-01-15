@@ -4,15 +4,54 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "make test"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bluebird": "^2.3.5",
-    "node-uuid": "^1.4.1"
+    "minimatch": "^1.0.0"
   },
   "devDependencies": {
-    "jest": "^0.1.37"
+    "jest-cli": "^0.2.1"
+  },
+  "jest": {
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules/",
+      "assert",
+      "buffer",
+      "child_process",
+      "cluster",
+      "console",
+      "constants",
+      "crypto",
+      "dgram",
+      "dns",
+      "domain",
+      "events",
+      "freelist",
+      "fs",
+      "http",
+      "https",
+      "module",
+      "net",
+      "os",
+      "path",
+      "punycode",
+      "querystring",
+      "readline",
+      "repl",
+      "smalloc",
+      "stream",
+      "string_decoder",
+      "sys",
+      "timers",
+      "tls",
+      "tty",
+      "url",
+      "util",
+      "vm",
+      "zlib"
+    ]
   }
 }

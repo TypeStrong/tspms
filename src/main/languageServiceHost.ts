@@ -14,9 +14,10 @@
 
 'use strict';
 
+import ts     = require('typescript');
+import path   = require('path');
 import logger = require('./logger');
-import path = require('path');
-import utils = require('./utils');
+import utils  = require('./utils');
 
 
 interface LanguageServiceHost extends ts.LanguageServiceHost {
@@ -238,11 +239,7 @@ module LanguageServiceHost {
         function getPositionFromIndex(fileName: string, index: number): {ch: number; line: number} {
             var script = fileNameToScript[fileName];
             if (script) {
-                var tsPosition = script.getLineAndColForPositon(index);
-                return {
-                    ch: tsPosition.character,
-                    line: tsPosition.line
-                };
+                return script.getLineAndColForPositon(index);
             }
             return null;
         }
@@ -272,10 +269,10 @@ module LanguageServiceHost {
             return false;
         }
 
-        function getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot {
+        function getScriptSnapshot(fileName: string): ts.IScriptSnapshot {
             var script = fileNameToScript[fileName];
             if (script) {
-                return new ScriptSnapshot(script);
+                return getScriptSnapShot(script);
             }
             return null;
         }
@@ -285,7 +282,18 @@ module LanguageServiceHost {
         }
 
         function getCancellationToken(): ts.CancellationToken {
+            //TODO
             return null;
+        }
+        
+        function getCurrentDirectory(): string {
+            //TODO
+            return "";
+        }
+        
+        function getDefaultLibFilename(): string {
+            //TODO
+            return "";
         }
 
         return {
@@ -319,7 +327,10 @@ module LanguageServiceHost {
             getScriptIsOpen: getScriptIsOpen,
             getScriptSnapshot: getScriptSnapshot,
             getLocalizedDiagnosticMessages: getLocalizedDiagnosticMessages,
-            getCancellationToken: getCancellationToken
+            getCancellationToken: getCancellationToken,
+            getCurrentDirectory: getCurrentDirectory,
+            getDefaultLibFilename: getDefaultLibFilename
+        
         };
     }
 
@@ -329,8 +340,8 @@ module LanguageServiceHost {
      */
     class ScriptInfo {
         version: number = 1;
-        editRanges: TypeScript.TextChangeRange[] = [];
-        lineMap: TypeScript.LineMap = null;
+        editRanges: ts.TextChangeRange[] = [];
+        lineStarts: number[];
         fileName: string;
         content: string;
         isOpen: boolean;
@@ -379,8 +390,10 @@ module LanguageServiceHost {
             this.setContent(prefix + middle + suffix);
 
             // Store edit range + new length of script
-            this.editRanges.push(new TypeScript.TextChangeRange(
-                    TypeScript.TextSpan.fromBounds(minChar, limChar), newText.length));
+            this.editRanges.push(new ts.TextChangeRange(
+                ts.TextSpan.fromBounds(minChar, limChar), 
+                newText.length
+            ));
 
             // Update version #
             this.version++;
@@ -394,8 +407,8 @@ module LanguageServiceHost {
          * @param line line number
          * @param character charecter poisiton in the line
          */
-        getPositionFromLine(line: number, character: number) {
-            return this.lineMap.getPosition(line, character);
+        getPositionFromLine(line: number, ch: number) {
+            return this.lineStarts[line] + ch;
         }
 
         /**
@@ -404,9 +417,17 @@ module LanguageServiceHost {
          * @param position
          */
         getLineAndColForPositon(position: number) {
-            var lineAndChar = { line: -1, character: -1};
-            this.lineMap.fillLineAndCharacterFromPosition(position, lineAndChar);
-            return lineAndChar;
+            if (position < 0 || position > this.content.length) {
+                throw new RangeError('Argument out of range: position');
+            }
+            var lineNumber = binarySearch(this.lineStarts, position);
+            if (lineNumber < 0) {
+                lineNumber = (~lineNumber) - 1;
+            }
+            return  { 
+                line: lineNumber, 
+                ch: position - this.lineStarts[lineNumber]
+            };
         }
 
 
@@ -415,48 +436,34 @@ module LanguageServiceHost {
          */
         private setContent(content: string): void {
             this.content = content;
-            this.lineMap = TypeScript.LineMap1.fromString(content);
+            this.lineStarts = ts.computeLineStarts(content);
         }
     }
-
-
-    /**
-     * ScriptSnapshot implementation
-     * Simply a proxy over ScriptInfo
-     */
-    class ScriptSnapshot implements TypeScript.IScriptSnapshot {
-        private scriptInfo: ScriptInfo;
-        private lineMap: TypeScript.LineMap = null;
-        private textSnapshot: string;
-        public version: number;
-        private editRanges: TypeScript.TextChangeRange[];
-
-        constructor(scriptInfo: ScriptInfo) {
-            this.scriptInfo = scriptInfo;
-            this.textSnapshot = scriptInfo.content;
-            this.version = scriptInfo.version;
-            this.editRanges = scriptInfo.editRanges.slice(0);
-        }
-
-        getText(start: number, end: number): string {
+    
+    
+    
+    function getScriptSnapShot(scriptInfo: ScriptInfo): ts.IScriptSnapshot  {
+        var lineStarts = scriptInfo.lineStarts;
+        var textSnapshot = scriptInfo.content;
+        var version = scriptInfo.version
+        var editRanges = scriptInfo.editRanges
+        
+        function getText(start: number, end: number): string {
             return this.textSnapshot.substring(start, end);
         }
 
-        getLength(): number {
+        function getLength(): number {
             return this.textSnapshot.length;
         }
-        getLineStartPositions(): number[] {
-            if (this.lineMap === null) {
-                this.lineMap = TypeScript.LineMap1.fromString(this.textSnapshot);
-            }
-            return this.lineMap.lineStarts();
+        function getLineStartPositions(): number[] {
+            return this.lineStarts;
         }
 
 
-        getChangeRange(oldSnapshot: TypeScript.IScriptSnapshot): TypeScript.TextChangeRange {
-            var scriptVersion: number = (<ScriptSnapshot>oldSnapshot).version
+        function getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
+            var scriptVersion: number = (<any>oldSnapshot).version || 0;
             if (scriptVersion === this.version) {
-                return TypeScript.TextChangeRange.unchanged;
+                return ts.TextChangeRange.unchanged;
             }
             var initialEditRangeIndex = this.editRanges.length - (this.version - scriptVersion);
 
@@ -465,8 +472,38 @@ module LanguageServiceHost {
             }
 
             var entries = this.editRanges.slice(initialEditRangeIndex);
-            return TypeScript.TextChangeRange.collapseChangesAcrossMultipleVersions(entries);
+            return ts.TextChangeRange.collapseChangesAcrossMultipleVersions(entries);
         }
+        
+        return {
+            getText: getText,
+            getLength: getLength,
+            getChangeRange: getChangeRange,
+            getLineStartPositions: getLineStartPositions,
+            version: version
+        }
+    }
+    
+    function binarySearch(array: number[], value: number): number {
+        var low = 0;
+        var high = array.length - 1;
+
+        while (low <= high) {
+            var middle = low + ((high - low) >> 1);
+            var midValue = array[middle];
+
+            if (midValue === value) {
+                return middle;
+            }
+            else if (midValue > value) {
+                high = middle - 1;
+            }
+            else {
+                low = middle + 1;
+            }
+        }
+
+        return ~low;
     }
 }
 

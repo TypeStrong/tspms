@@ -1,5 +1,6 @@
 
 import Promise          = require('bluebird');
+import ts               = require('typescript');
 import ProjectManager   = require('./projectManager');
 import fs               = require('./fileSystem');
 import ws               = require('./workingSet');
@@ -100,7 +101,7 @@ export function getDefinitionAtPosition(fileName: string, position: Position ): 
                 fileName: definition.fileName
             };
         });
-    }).catch(() => []);
+    }).catch((): DefinitionInfo[]  => []);
 }
 
 //--------------------------------------------------------------------------
@@ -146,7 +147,7 @@ export function getErrorsForFile(fileName: string): Promise<TSError[]> {
             type: diagnostic.category
         }));
         
-    }).catch(() => []);
+    }).catch((): TSError[] => []);
 }
 
 
@@ -299,14 +300,13 @@ export interface CompletionResult {
  * 
  * @return a promise resolving to a list of proposals
  */
-export function getCompletionAtPosition(fileName: string, position: Position)/*: Promise<CompletionResult>*/ {
+export function getCompletionAtPosition(fileName: string, position: Position): Promise<CompletionResult> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
 
         var languageService = project.getLanguageService(),
             languageServiceHost = project.getLanguageServiceHost(),
-            documentRegistry = project.getDocumentRegistry(),
             index = languageServiceHost.getIndexFromPosition(fileName, position),
-            completionInfo = languageService.getCompletionsAtPosition(fileName, index, true),
+            completionInfo = languageService.getCompletionsAtPosition(fileName, index),
             typeScriptEntries = completionInfo && completionInfo.entries;
 
 
@@ -314,30 +314,27 @@ export function getCompletionAtPosition(fileName: string, position: Position)/*:
             return { entries: [], match: '' };
         }
 
-        var sourceUnit = documentRegistry.acquireDocument(
-                fileName,
-                languageServiceHost.getCompilationSettings(),
-                languageServiceHost.getScriptSnapshot(fileName),
-                languageServiceHost.getScriptVersion(fileName),
-                languageServiceHost.getScriptIsOpen(fileName)
-            ).getSourceUnit(),
-            currentToken = TypeScript.Syntax.findTokenOnLeft(sourceUnit, index),
-            match: string;
-
-        if (currentToken && this.isValidTokenKind(currentToken.kind())) {
-            match = currentToken.fullText();
-            if (currentToken.leadingTrivia()) {
-                match = match.substr(currentToken.leadingTriviaWidth());
-            }
-
-            if (currentToken.trailingTrivia()) {
-                match = match.substr(0, match.length - currentToken.trailingTriviaWidth());
-            }
-
-            typeScriptEntries = typeScriptEntries.filter(entry => {
-                return entry.name && entry.name.toLowerCase().indexOf(match.toLowerCase()) === 0;
-            });
-        }
+        var  match: string;
+        //TODO
+//        
+//        var sourceUnit = languageService.getSourceFile(fileName).getSourceFile(),
+//            currentToken = TypeScript.Syntax.findTokenOnLeft(sourceUnit, index),
+//            match: string;
+//
+//        if (currentToken && this.isValidTokenKind(currentToken.kind())) {
+//            match = currentToken.fullText();
+//            if (currentToken.leadingTrivia()) {
+//                match = match.substr(currentToken.leadingTriviaWidth());
+//            }
+//
+//            if (currentToken.trailingTrivia()) {
+//                match = match.substr(0, match.length - currentToken.trailingTriviaWidth());
+//            }
+//
+//            typeScriptEntries = typeScriptEntries.filter(entry => {
+//                return entry.name && entry.name.toLowerCase().indexOf(match.toLowerCase()) === 0;
+//            });
+//        }
 
         typeScriptEntries.sort((entry1, entry2) => {
             var match1 = entry1 ? entry1.name.indexOf(match) : -1,
@@ -362,11 +359,12 @@ export function getCompletionAtPosition(fileName: string, position: Position)/*:
 
         var completionEntries = typeScriptEntries.map(typeScriptEntry => {
             var entryInfo = languageService.getCompletionEntryDetails(fileName, index, typeScriptEntry.name),
+                //TODO
                 completionEntry = {
                     name: typeScriptEntry.name,
                     kind: CompletionKind.DEFAULT,
-                    type: entryInfo && entryInfo.type,
-                    doc: entryInfo && entryInfo.docComment
+                    type: entryInfo && '', //&& entryInfo.type,
+                    doc: entryInfo && '' //&& entryInfo.docComment
                 };
 
 
@@ -422,7 +420,7 @@ export function getCompletionAtPosition(fileName: string, position: Position)/*:
                     break;
             }
             
-            documentRegistry.releaseDocument(fileName, languageServiceHost.getCompilationSettings());
+            //documentRegistry.releaseDocument(fileName, languageServiceHost.getCompilationSettings());
 
             return completionEntry;
         });
@@ -431,16 +429,17 @@ export function getCompletionAtPosition(fileName: string, position: Position)/*:
             entries: completionEntries,
             match : match
         };
-    }).catch(() => ({
+    }).catch((): CompletionResult => ({
         entries: [],
         match : ''
     }));
 }
 
-/**
- * helper method return true if the token correspond to an 'completable' token
- */
-function isValidTokenKind(tokenKind: number) {
-    return tokenKind === TypeScript.SyntaxKind.IdentifierName ||
-        (tokenKind >= TypeScript.SyntaxKind.BreakKeyword && tokenKind < TypeScript.SyntaxKind.OpenBraceToken); 
-}
+//TODO
+///**
+// * helper method return true if the token correspond to an 'completable' token
+// */
+//function isValidTokenKind(tokenKind: number) {
+//    return tokenKind === TypeScript.SyntaxKind.IdentifierName ||
+//        (tokenKind >= TypeScript.SyntaxKind.BreakKeyword && tokenKind < TypeScript.SyntaxKind.OpenBraceToken); 
+//}

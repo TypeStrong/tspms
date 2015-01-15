@@ -14,6 +14,7 @@
 
 'use strict';
 
+import ts           = require('typescript');
 import path         = require('path');
 import minimatch    = require('minimatch');
 import Promise      = require('bluebird');
@@ -25,7 +26,6 @@ import ws           = require('./workingSet');
 import logger       = require('./logger');
 import utils        = require('./utils');
 import PromiseQueue = utils.PromiseQueue
-import Services = TypeScript.Services;
 
 
 
@@ -121,11 +121,6 @@ export interface TypeScriptProject {
      */
     getLanguageService(): ts.LanguageService;
     
-    /**
-     * return the documentRegistry used by the project
-     */
-    getDocumentRegistry(): ts.DocumentRegistry;
-    
     
     //-------------------------------
     //  exposed files informations
@@ -191,12 +186,6 @@ export function createProject(
      * LanguageService managed by this project
      */
     var languageService: ts.LanguageService;
-    
-    
-    /**
-     * DocumentRegistry managed by this project
-     */
-    var documentRegistry: ts.DocumentRegistry
     
     /**
      * Map path to content
@@ -401,14 +390,13 @@ export function createProject(
         if (!projectFilesSet[fileName]) {
             return [];
         }
-        var script = languageServiceHost.getScriptSnapshot(fileName),
-            preProcessedFileInfo = TypeScript.preProcessFile(fileName, script, true),
+        var preProcessedFileInfo = ts.preProcessFile(fileName, true),
             dir = path.dirname(fileName);
         
         return preProcessedFileInfo.referencedFiles.map(fileReference => {
-            return utils.pathResolve(dir, fileReference.path);
+            return utils.pathResolve(dir, fileReference.filename);
         }).concat(preProcessedFileInfo.importedFiles.map(fileReference => {
-            return utils.pathResolve(dir, fileReference.path + '.ts');
+            return utils.pathResolve(dir, fileReference.filename + '.ts');
         }));
     }
     
@@ -574,8 +562,7 @@ export function createProject(
                 libLocation = typeScriptInfo.libLocation;
                 languageServiceHost = LanguageServiceHost.create();
                 languageServiceHost.setCompilationSettings(createCompilationSettings());
-                documentRegistry = typeScriptInfo.typeScript.createDocumentRegistry();
-                languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, documentRegistry);
+                languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, typeScriptInfo.typeScript.createDocumentRegistry());
 
                 return collectFiles();
                 
@@ -643,7 +630,6 @@ export function createProject(
         update: update,
         dispose: dispose,
         getLanguageService: () => languageService,
-        getDocumentRegistry: () => documentRegistry,
         getLanguageServiceHost: () => languageServiceHost,
         getProjectFilesSet: () => utils.clone(projectFilesSet),
         getProjectFileKind: getProjectFileKind
