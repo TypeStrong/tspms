@@ -385,7 +385,7 @@ export function createProject(
         if (!projectFilesSet[fileName]) {
             return [];
         }
-        var preProcessedFileInfo = ts.preProcessFile(fileName, true),
+        var preProcessedFileInfo = ts.preProcessFile(languageServiceHost.getScriptContent(fileName), true),
             dir = path.dirname(fileName);
         
         return preProcessedFileInfo.referencedFiles.map(fileReference => {
