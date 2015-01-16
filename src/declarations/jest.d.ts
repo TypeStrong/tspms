@@ -14,7 +14,25 @@ declare function xit(name: string, fn: jest.EmptyFunction): void;
 
 declare function expect(actual: any): jest.Matchers;
 
+declare function spyOn(object: any, method: string): jest.Spy;
+
 declare module jest {
+    
+     interface Spy {
+        (...params: any[]): any;
+
+        identity: string;
+        calls: any[];
+        mostRecentCall: { args: any[]; };
+        argsForCall: any[];
+        wasCalled: boolean;
+        callCount: number;
+
+        andReturn(value: any): Spy;
+        andCallThrough(): Spy;
+        andCallFake(fakeFunc: Function): Spy;
+    }
+    
     function autoMockOff(): void;
     function autoMockOn(): void;
     function clearAllTimers(): void;

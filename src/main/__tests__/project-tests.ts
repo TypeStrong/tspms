@@ -398,23 +398,24 @@ describe('project test', function () {
                 '/src/file1.ts'
             ]);
         });
-//        it('should create a new typescript factory instance if a typescript path is specified', function () {
-//
-//
-//            var mockTypeScript:typeof ts = <any>jest.genMockFromModule<typeof ts>('typescript')
-//            jest.setMock('/typescript/bin/typescriptServices.js', mockTypeScript);
-//
-//            createProject('/', {
-//                sources: [
-//                    'src/**/*ts'
-//                ],
-//                typescriptPath: '/typescript'
-//            });
-//
-//            jest.runAllTimers();
-//
-//            expect(mockTypeScript.createLanguageService).toBeCalled();
-//        });
+        
+        xit('should create a new typescript factory instance if a typescript path is specified', function () {
+
+
+            var mockTypeScript:typeof ts = <any>jest.genMockFromModule<typeof ts>('typescript')
+            jest.setMock('/typescript/bin/typescriptServices.js', mockTypeScript);
+
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ],
+                typescriptPath: '/typescript'
+            });
+
+            jest.runAllTimers();
+
+            expect(mockTypeScript.createLanguageService).toBeCalled();
+        });
         
     });
 
@@ -564,20 +565,20 @@ describe('project test', function () {
         });
 
 
-//        it('should reinitialize the project if typeScriptPath has changed', function () {
-//            var spy = spyOn(typeScriptProject, 'init').andCallThrough();
-//            expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/src/file2.ts')).toBeFalsy();
-//
-//            updateProject({
-//                target: 'es3',
-//                typescriptPath: 'typescript',
-//                sources: [
-//                    'src/file2.ts'
-//                ]
-//            });
-//
-//            expect(spy).toHaveBeenCalled();
-//        });
+        xit('should reinitialize the project if typeScriptPath has changed', function () {
+            var spy = spyOn(typeScriptProject, 'init').andCallThrough();
+            expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/src/file2.ts')).toBeFalsy();
+
+            updateProject({
+                target: 'es3',
+                typescriptPath: 'typescript',
+                sources: [
+                    'src/file2.ts'
+                ]
+            });
+
+            expect(spy).toBeCalled();
+        });
 
     });
     
