@@ -13,15 +13,13 @@ import TypeScriptProject = project.TypeScriptProject;
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 
 
+
+
 describe('project test', function () {
     var fileSystemMock: FileSystemMock,
         workingSetMock: WorkingSetMock,
         typeScriptProject: TypeScriptProject;
 
-    beforeEach(function () {
-        fileSystemMock = new FileSystemMock(),
-        workingSetMock = new WorkingSetMock();
-    });
 
     var defaultLibLocation = '/lib.d.ts';
     function createProject(baseDir: string, config: TypeScriptProjectConfig, init = true) {
@@ -31,20 +29,12 @@ describe('project test', function () {
             fileSystemMock,
             workingSetMock,
             defaultLibLocation
-            );
+        );
+        
         if (init) {
             typeScriptProject.init();
         }
     };
-
-
-    afterEach(function () {
-        if (typeScriptProject) {
-            typeScriptProject.dispose();
-            typeScriptProject = null;
-        }
-        fileSystemMock.dispose();
-    });
 
     function expectToBeEqualArray(actual: any[], expected: any[]) {
         expect(actual.sort()).toEqual(expected.sort());
@@ -62,9 +52,25 @@ describe('project test', function () {
         var snapshot = typeScriptProject.getLanguageServiceHost().getScriptSnapshot(fileName);
         return snapshot.getText(0, snapshot.getLength());
     }
+    
     function getProjectFiles() {
         return Object.keys(typeScriptProject.getProjectFilesSet());
     }
+    
+    
+    
+    beforeEach(function () {
+        fileSystemMock = new FileSystemMock(),
+        workingSetMock = new WorkingSetMock();
+    });
+
+    afterEach(function () {
+        if (typeScriptProject) {
+            typeScriptProject.dispose();
+            typeScriptProject = null;
+        }
+        fileSystemMock.dispose();
+    });
     
     describe('initialization', function () {
 
@@ -135,7 +141,43 @@ describe('project test', function () {
                 '/src/file1.ts'
             ]);
         });
+        
+        it('should add the default library if noLib is not specified or false', function () {
+            fileSystemMock.setFiles({
+                '/src/file1.ts': '',
+                '/lib.d.ts': ''
+            });
 
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ]
+            });
+            jest.runAllTimers();
+
+            expect(typeScriptProject.getProjectFilesSet().hasOwnProperty(defaultLibLocation)).toBe(true);
+        });
+
+        it('should not add the default library if noLib is not specified or false', function () {
+            fileSystemMock.setFiles({
+                '/src/file1.ts': '',
+                '/lib.d.ts': ''
+            });
+
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ],
+                noLib: true
+            });
+            jest.runAllTimers();
+
+            expect(typeScriptProject.getProjectFilesSet().hasOwnProperty(defaultLibLocation)).toBeFalsy();
+        });
+    });
+    
+    
+    describe('filesystem change handling', function () {
 
         it('should collect referenced files from file added ', function () {
             fileSystemMock.setFiles({
@@ -313,121 +355,75 @@ describe('project test', function () {
 
             expect(getProjectFileContent('/src/file1.ts')).toBe('hello');
         });
-    });
+        
+        
+        it('should collect a file reference when a file change', function () {
+            fileSystemMock.setFiles({
+                '/src/file1.ts': '',
+                '/other/file2.ts': ''
+            });
 
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ]
+            });
 
-    it('should collect a file reference when a file change', function () {
-        fileSystemMock.setFiles({
-            '/src/file1.ts': '',
-            '/other/file2.ts': ''
+            fileSystemMock.updateFile('/src/file1.ts', '///<reference path="../other/file2.ts"/>');
+            jest.runAllTimers();
+
+            expectToBeEqualArray(getProjectFiles(), [
+                '/src/file1.ts',
+                '/other/file2.ts'
+            ]);
         });
 
-        createProject('/', {
-            sources: [
-                'src/**/*ts'
-            ]
+
+        it('should remove referenced files when a file change, and does not reference them anymore', function () {
+            fileSystemMock.setFiles({
+                '/src/file1.ts': '///<reference path="../other/file2.ts"/>',
+                '/other/file2.ts': ''
+            });
+
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ]
+            });
+
+            fileSystemMock.updateFile('/src/file1.ts', '');
+            jest.runAllTimers();
+
+            expectToBeEqualArray(getProjectFiles(), [
+                '/src/file1.ts'
+            ]);
         });
-
-        fileSystemMock.updateFile('/src/file1.ts', '///<reference path="../other/file2.ts"/>');
-        jest.runAllTimers();
-
-        expectToBeEqualArray(getProjectFiles(), [
-            '/src/file1.ts',
-            '/other/file2.ts'
-        ]);
-    });
-
-
-    it('should remove referenced files when a file change, and does not reference them anymore', function () {
-        fileSystemMock.setFiles({
-            '/src/file1.ts': '///<reference path="../other/file2.ts"/>',
-            '/other/file2.ts': ''
-        });
-
-        createProject('/', {
-            sources: [
-                'src/**/*ts'
-            ]
-        });
-
-        fileSystemMock.updateFile('/src/file1.ts', '');
-        jest.runAllTimers();
-
-        expectToBeEqualArray(getProjectFiles(), [
-            '/src/file1.ts'
-        ]);
-    });
-
-    it('should add the default library if noLib is not specified or false', function () {
-        fileSystemMock.setFiles({
-            '/src/file1.ts': '',
-            '/lib.d.ts': ''
-        });
-
-        createProject('/', {
-            sources: [
-                'src/**/*ts'
-            ]
-        });
-        jest.runAllTimers();
-
-        expect(typeScriptProject.getProjectFilesSet().hasOwnProperty(defaultLibLocation)).toBe(true);
-    });
-
-    it('should not add the default library if noLib is not specified or false', function () {
-        fileSystemMock.setFiles({
-            '/src/file1.ts': '',
-            '/lib.d.ts': ''
-        });
-
-        createProject('/', {
-            sources: [
-                'src/**/*ts'
-            ],
-            noLib: true
-        });
-        jest.runAllTimers();
-
-        expect(typeScriptProject.getProjectFilesSet().hasOwnProperty(defaultLibLocation)).toBeFalsy();
-    });
-
-
-    it('should create a new typescript factory instance if a typescript path is specified', function () {
-//        fileSystemMock.setFiles({
-//            '/typescript/typescriptServices.js':
-//            'var TypeScript = {\
-//                            Services: {\
-//                                TypeScriptServicesFactory: function () { \
-//                                    return { \
-//                                        createCoreServices: function () { return {} }, \
-//                                        createPullLanguageService: function () {  return { id:\'hello\'} }\
-//                                    }\
-//                                }\
-//                            }\
-//                        };',
-//            '/lib.d.ts': ''
+//        it('should create a new typescript factory instance if a typescript path is specified', function () {
+//
+//
+//            var mockTypeScript:typeof ts = <any>jest.genMockFromModule<typeof ts>('typescript')
+//            jest.setMock('/typescript/bin/typescriptServices.js', mockTypeScript);
+//
+//            createProject('/', {
+//                sources: [
+//                    'src/**/*ts'
+//                ],
+//                typescriptPath: '/typescript'
+//            });
+//
+//            jest.runAllTimers();
+//
+//            expect(mockTypeScript.createLanguageService).toBeCalled();
 //        });
         
-        var mockTypeScript:typeof ts = <any>jest.genMockFromModule<typeof ts>('typescript')
-        jest.setMock('/typescript/bin/typescriptServices.js', mockTypeScript);
-        
-       
-
-        createProject('/', {
-            sources: [
-                'src/**/*ts'
-            ],
-            typescriptPath: '/typescript'
-        });
-
-        jest.runAllTimers();
-
-        expect(mockTypeScript.createLanguageService).toBeCalled();
     });
 
 
+    
 
-    describe('update', function () {
+
+
+    describe('project update update', function () {
         beforeEach(function () {
             fileSystemMock.setFiles({
                 '/src/file1.ts': 'import file3 = require(\'./file3\');',
@@ -564,8 +560,6 @@ describe('project test', function () {
             jest.runAllTimers();
 
 
-
-
             testWorkingSetOpenCorrespondance();
         });
 
@@ -585,168 +579,168 @@ describe('project test', function () {
 //            expect(spy).toHaveBeenCalled();
 //        });
 
-
-        describe('getProjectFileKind', function () {
-            it('should return \'SOURCE\' if the file path match the \'sources\' section of the given config', function () {
-                fileSystemMock.setFiles({
-                    '/src/file1.ts': ''
-                });
-
-                createProject('/', {
-                    sources: [
-                        'src/**/*ts'
-                    ]
-                });
-
-                jest.runAllTimers();
-
-                expect(typeScriptProject.getProjectFileKind('/src/file1.ts')).toBe(project.ProjectFileKind.SOURCE);
+    });
+    
+    describe('getProjectFileKind', function () {
+        it('should return \'SOURCE\' if the file path match the \'sources\' section of the given config', function () {
+            fileSystemMock.setFiles({
+                '/src/file1.ts': ''
             });
 
-
-            it('should return \'REFERENCE\' if the file is a referenced file', function () {
-                fileSystemMock.setFiles({
-                    '/src/file1.ts': '///<reference path="../other/file2.ts"/>',
-                    '/other/file2.ts': ''
-                });
-
-                createProject('/', {
-                    sources: [
-                        'src/**/*ts'
-                    ]
-                });
-
-                jest.runAllTimers();
-
-                expect(typeScriptProject.getProjectFileKind('/other/file2.ts')).toBe(project.ProjectFileKind.REFERENCE);
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ]
             });
 
-            it('should return \'NONE\' if the file is a nor a part of the project', function () {
-                fileSystemMock.setFiles({
-                    '/src/file1.ts': '',
-                    '/other/file2.ts': ''
-                });
+            jest.runAllTimers();
 
-                createProject('/', {
-                    sources: [
-                        'src/**/*ts'
-                    ]
-                });
-
-                jest.runAllTimers();
-
-                expect(typeScriptProject.getProjectFileKind('/other/file2.ts')).toBe(project.ProjectFileKind.NONE);
-            });
-
+            expect(typeScriptProject.getProjectFileKind('/src/file1.ts')).toBe(project.ProjectFileKind.SOURCE);
         });
 
 
-        describe('working set handling', function () {
-            beforeEach(function () {
-                fileSystemMock.setFiles({
-                    '/src/file1.ts': '',
-                    '/src/file2.ts': '',
-                    '/src/file3.ts': '',
-                    '/src/file4.ts': '',
-                    '/src/file5.ts': ''
-                });
-
-                workingSetMock.files = [
-                    '/src/file1.ts',
-                    '/src/file2.ts'
-                ];
-
-                createProject('/', {
-                    sources: [
-                        'src/**/*ts'
-                    ]
-                });
-                jest.runAllTimers();
+        it('should return \'REFERENCE\' if the file is a referenced file', function () {
+            fileSystemMock.setFiles({
+                '/src/file1.ts': '///<reference path="../other/file2.ts"/>',
+                '/other/file2.ts': ''
             });
 
-
-            it('should mark as \'open\' every file of the working set', function () {
-                testWorkingSetOpenCorrespondance();
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ]
             });
 
-            it('should mark as \'open\' every file added to working set', function () {
-                workingSetMock.addFiles(['/src/file3.ts', '/src/file4.ts']);
-                jest.runAllTimers();
+            jest.runAllTimers();
 
-                testWorkingSetOpenCorrespondance();
+            expect(typeScriptProject.getProjectFileKind('/other/file2.ts')).toBe(project.ProjectFileKind.REFERENCE);
+        });
+
+        it('should return \'NONE\' if the file is a nor a part of the project', function () {
+            fileSystemMock.setFiles({
+                '/src/file1.ts': '',
+                '/other/file2.ts': ''
             });
 
-            it('should mark as \'closed\' every file removed from the working set', function () {
-                workingSetMock.removeFiles(['/src/file1.ts']);
-                jest.runAllTimers();
-
-                testWorkingSetOpenCorrespondance();
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ]
             });
 
+            jest.runAllTimers();
+
+            expect(typeScriptProject.getProjectFileKind('/other/file2.ts')).toBe(project.ProjectFileKind.NONE);
+        });
+
+    });
+
+
+    describe('working set handling', function () {
+        beforeEach(function () {
+            fileSystemMock.setFiles({
+                '/src/file1.ts': '',
+                '/src/file2.ts': '',
+                '/src/file3.ts': '',
+                '/src/file4.ts': '',
+                '/src/file5.ts': ''
+            });
+
+            workingSetMock.files = [
+                '/src/file1.ts',
+                '/src/file2.ts'
+            ];
+
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ]
+            });
+            jest.runAllTimers();
         });
 
 
+        it('should mark as \'open\' every file of the working set', function () {
+            testWorkingSetOpenCorrespondance();
+        });
 
-        describe('file edition', function () {
-            beforeEach(function () {
-                fileSystemMock.setFiles({
-                    '/src/file1.ts': ''
-                });
+        it('should mark as \'open\' every file added to working set', function () {
+            workingSetMock.addFiles(['/src/file3.ts', '/src/file4.ts']);
+            jest.runAllTimers();
 
-                workingSetMock.files = [
-                    '/src/file1.ts'
-                ];
+            testWorkingSetOpenCorrespondance();
+        });
 
-                createProject('/', {
-                    sources: [
-                        'src/**/*ts'
-                    ]
-                });
+        it('should mark as \'closed\' every file removed from the working set', function () {
+            workingSetMock.removeFiles(['/src/file1.ts']);
+            jest.runAllTimers();
+
+            testWorkingSetOpenCorrespondance();
+        });
+
+    });
+
+
+
+    describe('file edition', function () {
+        beforeEach(function () {
+            fileSystemMock.setFiles({
+                '/src/file1.ts': ''
+            });
+
+            workingSetMock.files = [
+                '/src/file1.ts'
+            ];
+
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ]
+            });
+        });
+
+
+        it('should edit a script when a document corresponding to a project file\'s is edited', function () {
+            workingSetMock.documentEdited.dispatch({
+                path: '/src/file1.ts',
+                changeList: [{
+                    from: {
+                        ch: 0,
+                        line: 0
+                    },
+                    to: {
+                        ch: 0,
+                        line: 0,
+                    },
+                    text: 'console.log(\'hello world\')',
+                    removed: ''
+                }],
+                documentText: 'console.log(\'hello world\')'
+            });
+            jest.runAllTimers();
+
+            expect(getProjectFileContent('/src/file1.ts')).toBe('console.log(\'hello world\')');
+            workingSetMock.documentEdited.dispatch({
+                path: '/src/file1.ts',
+                changeList: [{
+                    from: {
+                        ch: 8,
+                        line: 0
+                    },
+                    to: {
+                        ch: 11,
+                        line: 0,
+                    },
+                    text: 'warn',
+                    removed: '',
+                }],
+                documentText: 'console.warn(\'hello world\')'
             });
 
 
-            it('should edit a script when a document corresponding to a project file\'s is edited', function () {
-                workingSetMock.documentEdited.dispatch({
-                    path: '/src/file1.ts',
-                    changeList: [{
-                        from: {
-                            ch: 0,
-                            line: 0
-                        },
-                        to: {
-                            ch: 0,
-                            line: 0,
-                        },
-                        text: 'console.log(\'hello world\')',
-                        removed: ''
-                    }],
-                    documentText: 'console.log(\'hello world\')'
-                });
-                jest.runAllTimers();
+            jest.runAllTimers();
 
-                expect(getProjectFileContent('/src/file1.ts')).toBe('console.log(\'hello world\')');
-                workingSetMock.documentEdited.dispatch({
-                    path: '/src/file1.ts',
-                    changeList: [{
-                        from: {
-                            ch: 8,
-                            line: 0
-                        },
-                        to: {
-                            ch: 11,
-                            line: 0,
-                        },
-                        text: 'warn',
-                        removed: '',
-                    }],
-                    documentText: 'console.warn(\'hello world\')'
-                });
-
-
-                jest.runAllTimers();
-
-                expect(getProjectFileContent('/src/file1.ts')).toBe('console.warn(\'hello world\')');
-            });
+            expect(getProjectFileContent('/src/file1.ts')).toBe('console.warn(\'hello world\')');
         });
 
         it('should set script with given document content if change dispatched does not have \'to\' or \'from\' property ', function () {
@@ -829,6 +823,5 @@ describe('project test', function () {
 
             expect(getProjectFileContent('/src/file1.ts')).toBe('');
         });
-
     });
 });
