@@ -432,7 +432,7 @@ module LanguageServiceHost {
                 throw new RangeError('Argument out of range: position');
             }
             var lineStarts = getLineStarts();
-            var lineNumber = binarySearch(lineStarts, position);
+            var lineNumber = utils.binarySearch(lineStarts, position);
             if (lineNumber < 0) {
                 lineNumber = (~lineNumber) - 1;
             }
@@ -496,27 +496,6 @@ module LanguageServiceHost {
         }
     }
     
-    function binarySearch(array: number[], value: number): number {
-        var low = 0;
-        var high = array.length - 1;
-
-        while (low <= high) {
-            var middle = low + ((high - low) >> 1);
-            var midValue = array[middle];
-
-            if (midValue === value) {
-                return middle;
-            }
-            else if (midValue > value) {
-                high = middle - 1;
-            }
-            else {
-                low = middle + 1;
-            }
-        }
-
-        return ~low;
-    }
 }
 
 
