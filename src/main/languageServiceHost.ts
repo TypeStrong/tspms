@@ -122,7 +122,7 @@ module LanguageServiceHost {
          * @param content the file content
          */
         function addScript(fileName: string, content: string) {
-            var script = new ScriptInfo(fileName, content);
+            var script = createScriptInfo(fileName, content);
             fileNameToScript[fileName] = script;
         }
 
@@ -186,7 +186,7 @@ module LanguageServiceHost {
         function setScriptIsOpen(fileName: string, isOpen: boolean) {
             var script = fileNameToScript[fileName];
             if (script) {
-                script.isOpen = isOpen;
+                script.setIsOpen(isOpen);
                 return;
             }
 
@@ -199,7 +199,7 @@ module LanguageServiceHost {
          * @param the settings to be applied to the host
          */
         function setCompilationSettings(settings: ts.CompilerOptions ): void{
-            this.compilationSettings = Object.freeze(utils.clone(settings));
+            compilationSettings = Object.freeze(utils.clone(settings));
         }
 
         /**
@@ -210,7 +210,7 @@ module LanguageServiceHost {
         function getScriptContent(fileName: string): string {
             var script = fileNameToScript[fileName];
             if (script) {
-                return script.content;
+                return script.getContent();
             }
             return null;
         }
@@ -256,7 +256,7 @@ module LanguageServiceHost {
         function getScriptVersion(fileName: string): string {
             var script = fileNameToScript[fileName];
             if (script) {
-                return '' + script.version;
+                return '' + script.getVersion;
             }
             return '0';
         }
@@ -264,7 +264,7 @@ module LanguageServiceHost {
         function getScriptIsOpen(fileName: string): boolean {
             var script = fileNameToScript[fileName];
             if (script) {
-                return script.isOpen;
+                return script.getIsOpen();
             }
             return false;
         }
@@ -334,44 +334,53 @@ module LanguageServiceHost {
         };
     }
 
-
+    
+    interface ScriptInfo {
+        getFileName(): string;
+        getContent(): string;
+        getVersion(): number;
+        getIsOpen(): boolean;
+        setIsOpen(val: boolean): void;
+        getEditRanges(): ts.TextChangeRange[];
+        getLineStarts(): number[];
+        
+        
+        updateContent(newContent: string): void;
+        editContent(minChar: number, limChar: number, newText: string): void;
+        getPositionFromLine(line: number, ch: number): number;
+        getLineAndColForPositon(position: number): { line: number; ch: number };
+    }
+    
     /**
      * Manage a script in the language service host
      */
-    class ScriptInfo {
-        version: number = 1;
-        editRanges: ts.TextChangeRange[] = [];
-        lineStarts: number[];
-        fileName: string;
-        content: string;
-        isOpen: boolean;
-
-
-        /**
-         * @param fileName the absolute path of the file
-         * @param content the content of the file
-         * @param isOpen the open status of the script
-         * @param byteOrderMark
-         */
-        constructor(fileName: string, content: string, isOpen = false) {
-            this.fileName = fileName;
-            this.content = content;
-            this.isOpen = isOpen;
-            this.setContent(content);
+    function createScriptInfo(fileName: string, content: string, isOpen = false): ScriptInfo {
+        
+        
+        var version: number = 1;
+        var editRanges: ts.TextChangeRange[] = [];
+        
+        var _lineStarts: number[];
+        var _lineStartIsDirty = true;
+       
+        function getLineStarts() {
+            if (_lineStartIsDirty) {
+                _lineStarts = ts.computeLineStarts(content);
+                _lineStartIsDirty = false;
+            } 
+            return _lineStarts;
         }
-
-
-
 
         /**
          * update the content of the script
          * 
          * @param newContent the new script content
          */
-        updateContent(newContent: string): void {
-            this.setContent(newContent);
-            this.editRanges = [];
-            this.version++;
+        function updateContent(newContent: string): void {
+            content = newContent;
+            _lineStartIsDirty = true;
+            editRanges = [];
+            version++;
         }
 
 
@@ -382,21 +391,23 @@ module LanguageServiceHost {
          * @param limChar the index  in the file content where the edition ends
          * @param newText the text inserted
          */
-        editContent(minChar: number, limChar: number, newText: string): void {
+        function editContent(minChar: number, limChar: number, newText: string): void {
             // Apply edits
-            var prefix = this.content.substring(0, minChar);
+            var prefix = content.substring(0, minChar);
             var middle = newText;
-            var suffix = this.content.substring(limChar);
-            this.setContent(prefix + middle + suffix);
+            var suffix = content.substring(limChar);
+            content = prefix + middle + suffix;
+            _lineStartIsDirty = true;
+            
 
             // Store edit range + new length of script
-            this.editRanges.push(new ts.TextChangeRange(
+            editRanges.push(new ts.TextChangeRange(
                 ts.TextSpan.fromBounds(minChar, limChar), 
                 newText.length
             ));
 
             // Update version #
-            this.version++;
+            version++;
         }
 
 
@@ -407,8 +418,8 @@ module LanguageServiceHost {
          * @param line line number
          * @param character charecter poisiton in the line
          */
-        getPositionFromLine(line: number, ch: number) {
-            return this.lineStarts[line] + ch;
+        function getPositionFromLine(line: number, ch: number) {
+            return getLineStarts()[line] + ch;
         }
 
         /**
@@ -416,51 +427,61 @@ module LanguageServiceHost {
          * 
          * @param position
          */
-        getLineAndColForPositon(position: number) {
-            if (position < 0 || position > this.content.length) {
+        function getLineAndColForPositon(position: number) {
+            if (position < 0 || position > content.length) {
                 throw new RangeError('Argument out of range: position');
             }
-            var lineNumber = binarySearch(this.lineStarts, position);
+            var lineStarts = getLineStarts();
+            var lineNumber = binarySearch(lineStarts, position);
             if (lineNumber < 0) {
                 lineNumber = (~lineNumber) - 1;
             }
             return  { 
                 line: lineNumber, 
-                ch: position - this.lineStarts[lineNumber]
+                ch: position - lineStarts[lineNumber]
             };
         }
 
 
-        /**
-         * set the script content
-         */
-        private setContent(content: string): void {
-            this.content = content;
-            this.lineStarts = ts.computeLineStarts(content);
+        
+        
+        return {
+            getFileName: () => fileName,
+            getContent: () => content,
+            getVersion: () => version,
+            getIsOpen: () => isOpen,
+            setIsOpen: val => isOpen = val,
+            getEditRanges: () => editRanges,
+            getLineStarts: getLineStarts,
+
+            updateContent: updateContent,
+            editContent: editContent,
+            getPositionFromLine: getPositionFromLine,
+            getLineAndColForPositon: getLineAndColForPositon
         }
     }
     
     
     
     function getScriptSnapShot(scriptInfo: ScriptInfo): ts.IScriptSnapshot  {
-        var lineStarts = scriptInfo.lineStarts;
-        var textSnapshot = scriptInfo.content;
-        var version = scriptInfo.version
-        var editRanges = scriptInfo.editRanges
+        var lineStarts = scriptInfo.getLineStarts();
+        var textSnapshot = scriptInfo.getContent();
+        var version = scriptInfo.getVersion()
+        var editRanges = scriptInfo.getEditRanges()
         
 
         function getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
             var scriptVersion: number = (<any>oldSnapshot).version || 0;
-            if (scriptVersion === this.version) {
+            if (scriptVersion === version) {
                 return ts.TextChangeRange.unchanged;
             }
-            var initialEditRangeIndex = this.editRanges.length - (this.version - scriptVersion);
+            var initialEditRangeIndex = editRanges.length - (version - scriptVersion);
 
             if (initialEditRangeIndex < 0) {
                 return null;
             }
 
-            var entries = this.editRanges.slice(initialEditRangeIndex);
+            var entries = editRanges.slice(initialEditRangeIndex);
             return ts.TextChangeRange.collapseChangesAcrossMultipleVersions(entries);
         }
         
