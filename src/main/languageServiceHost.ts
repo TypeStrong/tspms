@@ -448,17 +448,6 @@ module LanguageServiceHost {
         var version = scriptInfo.version
         var editRanges = scriptInfo.editRanges
         
-        function getText(start: number, end: number): string {
-            return this.textSnapshot.substring(start, end);
-        }
-
-        function getLength(): number {
-            return this.textSnapshot.length;
-        }
-        function getLineStartPositions(): number[] {
-            return this.lineStarts;
-        }
-
 
         function getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
             var scriptVersion: number = (<any>oldSnapshot).version || 0;
@@ -476,10 +465,12 @@ module LanguageServiceHost {
         }
         
         return {
-            getText: getText,
-            getLength: getLength,
+            getText(start: number, end: number): string {
+                return textSnapshot.substring(start, end);
+            },
+            getLength: () => textSnapshot.length,
             getChangeRange: getChangeRange,
-            getLineStartPositions: getLineStartPositions,
+            getLineStartPositions: () => lineStarts,
             version: version
         }
     }
