@@ -52,6 +52,10 @@
       "util",
       "vm",
       "zlib"
+    ],
+    "testPathIgnorePatterns": [
+        "<rootDir>/node_modules/",
+        ".*Mock.js"
     ]
   }
 }
