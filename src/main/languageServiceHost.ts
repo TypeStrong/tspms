@@ -256,7 +256,7 @@ module LanguageServiceHost {
         function getScriptVersion(fileName: string): string {
             var script = fileNameToScript[fileName];
             if (script) {
-                return '' + script.getVersion;
+                return '' + script.getVersion();
             }
             return '0';
         }
@@ -486,9 +486,7 @@ module LanguageServiceHost {
         }
         
         return {
-            getText(start: number, end: number): string {
-                return textSnapshot.substring(start, end);
-            },
+            getText: (start: number, end: number) => textSnapshot.substring(start, end),
             getLength: () => textSnapshot.length,
             getChangeRange: getChangeRange,
             getLineStartPositions: () => lineStarts,

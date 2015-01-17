@@ -12,7 +12,7 @@ DECLARATIONS=$(DECLARATION)/bluebird.d.ts $(DECLARATION)/core.d.ts $(DECLARATION
 
 SOURCES= $(MAIN)/fileSystem.ts $(MAIN)/index.ts $(MAIN)/languageServiceHost.ts $(MAIN)/logger.ts $(MAIN)/project.ts $(MAIN)/projectManager.ts $(MAIN)/utils.ts $(MAIN)/workingSet.ts
 
-TESTS=$(DECLARATION)/jest.d.ts  $(__TESTS__)/fileSystemMock.ts $(__TESTS__)/workingSetMock.ts $(__TESTS__)/project-tests.ts
+TESTS=$(DECLARATION)/jest.d.ts  $(__TESTS__)/fileSystemMock.ts $(__TESTS__)/workingSetMock.ts $(__TESTS__)/project-tests.ts $(__TESTS__)/languageServiceHost-test.ts
 
 all: test clean build 
 	
