@@ -83,7 +83,7 @@ var projectMap: { [key: string]: any /**Project*/} = {};
  * tempory Project used for typescript file 
  * that correspond to no registred project
  */
-var tempProject: any//TypeScriptProject;
+var tempProject: TypeScriptProject;
 
 /**
  * absolute path of the opened root directory 
@@ -148,7 +148,7 @@ function createProjectFromConfig(projectId: string, config: TypeScriptProjectCon
         fileSystem,
         workingSet,
         path.join(defaultTypeScriptLocation, 'lib.d.ts')
-        );
+    );
     return project.init().then(() => {
         projectMap[projectId] = project;
     }, () => {
@@ -174,6 +174,7 @@ export function init(config: ProjectManagerConfig): Promise<void> {
     defaultTypeScriptLocation = config.defaultTypeScriptLocation;
     workingSet = config.workingSet;
     fileSystem = config.fileSystem;
+    projectConfigs = config.projectConfigs;
 
 
     return queue.init(fileSystem.getProjectRoot().then(projectRootDir => {
@@ -222,7 +223,7 @@ export function getProjectForFile(fileName: string): Promise<TypeScriptProject> 
 
         //then we check if the current temp project has the file
         if (!project) {
-            if (tempProject && tempProject.getProjectFilesSet().has(fileName)) {
+            if (tempProject && tempProject.getProjectFilesSet()[fileName]) {
                 project = tempProject;
             } else if (tempProject) {
                 tempProject.dispose();
@@ -241,7 +242,7 @@ export function getProjectForFile(fileName: string): Promise<TypeScriptProject> 
                 fileSystem,
                 workingSet,
                 path.join(defaultTypeScriptLocation, 'lib.d.ts')
-                );
+            );
             return tempProject.init().then(() => tempProject);
         }
 
@@ -253,13 +254,14 @@ export function getProjectForFile(fileName: string): Promise<TypeScriptProject> 
 /* 
  * update / delete / create project according to changes in project configs
  */
-function updateConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }) {
+export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }) {
     projectConfigs = configs;
     return queue.then(() => {
         var promises: Promise<any>[] = [];
         Object.keys(projectMap).forEach(projectId => {
             var project = projectMap[projectId],
                 config = projectConfigs[projectId];
+            
             if (!config) {
                 project.dispose();
                 delete projectMap[projectId];
