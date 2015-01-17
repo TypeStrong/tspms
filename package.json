@@ -10,7 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^2.3.5",
-    "minimatch": "^1.0.0"
+    "minimatch": "^1.0.0",
+    "typescript": "^1.4.1"
   },
   "devDependencies": {
     "jest-cli": "^0.2.1"
@@ -54,8 +55,8 @@
       "zlib"
     ],
     "testPathIgnorePatterns": [
-        "<rootDir>/node_modules/",
-        ".*Mock.js"
+      "<rootDir>/node_modules/",
+      ".*Mock.js"
     ]
   }
 }
