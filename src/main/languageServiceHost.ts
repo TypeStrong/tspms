@@ -103,7 +103,7 @@ interface LanguageServiceHost extends ts.LanguageServiceHost {
 
 
 module LanguageServiceHost {
-    export function create(): LanguageServiceHost {
+    export function create(baseDir: string, defaultLibFileName: string): LanguageServiceHost {
 
         /**
          * compilationSettings
@@ -277,23 +277,12 @@ module LanguageServiceHost {
             return null;
         }
 
-        function getLocalizedDiagnosticMessages(): any {
-            return {};
-        }
-
-        function getCancellationToken(): ts.CancellationToken {
-            //TODO
-            return null;
-        }
-        
         function getCurrentDirectory(): string {
-            //TODO
-            return "";
+            return baseDir;
         }
         
         function getDefaultLibFilename(): string {
-            //TODO
-            return "";
+            return defaultLibFileName;
         }
 
         return {
@@ -326,8 +315,6 @@ module LanguageServiceHost {
             getScriptVersion: getScriptVersion,
             getScriptIsOpen: getScriptIsOpen,
             getScriptSnapshot: getScriptSnapshot,
-            getLocalizedDiagnosticMessages: getLocalizedDiagnosticMessages,
-            getCancellationToken: getCancellationToken,
             getCurrentDirectory: getCurrentDirectory,
             getDefaultLibFilename: getDefaultLibFilename
         

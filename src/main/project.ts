@@ -554,7 +554,7 @@ export function createProject(
         
         var typeScriptInfo = getTypeScriptInfosForPath(_config.typescriptPath);
         libLocation = typeScriptInfo.libLocation;
-        languageServiceHost = LanguageServiceHost.create();
+        languageServiceHost = LanguageServiceHost.create(baseDirectory, libLocation);
         languageServiceHost.setCompilationSettings(createCompilationSettings());
         languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, typeScriptInfo.typeScript.createDocumentRegistry());
     

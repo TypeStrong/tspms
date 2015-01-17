@@ -25,7 +25,7 @@ import utils = require('../utils');
 describe('LanguageServiceHost', function () {
     var languageServiceHost: LanguageServiceHost;
     beforeEach(function () {
-        languageServiceHost = LanguageServiceHost.create()
+        languageServiceHost = LanguageServiceHost.create('/', 'lib.d.ts')
     });
     describe('CompilationSettings', function () {
         it('should copy the given compilation settings', function () {
