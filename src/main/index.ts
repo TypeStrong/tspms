@@ -5,7 +5,6 @@ import ProjectManager   = require('./projectManager');
 import fs               = require('./fileSystem');
 import ws               = require('./workingSet');
 import project          = require('./project');
-import logger           = require('./logger');
 
 export interface Position { 
     line: number; 
@@ -414,9 +413,10 @@ export function getCompletionAtPosition(fileName: string, position: Position): P
                 case ts.ScriptElementKind.indexSignatureElement:
                 case ts.ScriptElementKind.memberGetAccessorElement:
                 case ts.ScriptElementKind.memberSetAccessorElement:
-                    if (logger.information()) {
-                        logger.log('un handled ScriptElementKind in completion list: ' +  typeScriptEntry.kind);
-                    }
+                    //TODO
+//                    if (logger.information()) {
+//                        logger.log('un handled ScriptElementKind in completion list: ' +  typeScriptEntry.kind);
+//                    }
                     break;
             }
             

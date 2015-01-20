@@ -23,7 +23,6 @@ import Promise      = require('bluebird');
 import fs           = require('./fileSystem');
 import ws           = require('./workingSet');
 
-import logger       = require('./logger');
 import utils        = require('./utils');
 import PromiseQueue = utils.PromiseQueue
 
@@ -528,13 +527,14 @@ export function createProject(
                     return mustUpdate;
                 });
                 if (mustUpdate || languageServiceHost.getScriptContent(record.path) !== record.documentText) {
-                    if (logger.warning()) {
-                        if (mustUpdate) {
-                            logger.log('TypeScriptProject: inconsistent change descriptor: ' + JSON.stringify(lastChange));
-                        } else {
-                            logger.log('TypeScriptProject: text different before and after change');
-                        }
-                    }
+                    //TODO
+//                    if (logger.warning()) {
+//                        if (mustUpdate) {
+//                            logger.log('TypeScriptProject: inconsistent change descriptor: ' + JSON.stringify(lastChange));
+//                        } else {
+//                            logger.log('TypeScriptProject: text different before and after change');
+//                        }
+//                    }
                     languageServiceHost.updateScript(record.path, record.documentText);
                 }
 

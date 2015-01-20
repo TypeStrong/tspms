@@ -16,7 +16,6 @@
 
 import ts     = require('typescript');
 import path   = require('path');
-import logger = require('./logger');
 import utils  = require('./utils');
 
 
@@ -287,12 +286,7 @@ module LanguageServiceHost {
 
         return {
             //ts.Logger implementation
-            information: logger.information,
-            debug: logger.debug,
-            warning: logger.warning,
-            error: logger.error,
-            fatal: logger.fatal,
-            log: logger.log,
+            log: () => void 0,
 
 
             // LanguageServiceHost implementation

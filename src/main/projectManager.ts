@@ -32,7 +32,6 @@ import utils = require('./utils');
 import PromiseQueue = utils.PromiseQueue;
 
 
-import logger = require('./logger');
 
 
 
@@ -152,9 +151,10 @@ function createProjectFromConfig(projectId: string, config: TypeScriptProjectCon
     return project.init().then(() => {
         projectMap[projectId] = project;
     }, () => {
-        if (logger.fatal()) {
-            logger.log('could not create project:' + projectId);
-        }
+        //TODO
+//        if (logger.fatal()) {
+//            logger.log('could not create project:' + projectId);
+//        }
     });
 }
 
