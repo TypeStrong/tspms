@@ -141,7 +141,7 @@ export function getErrorsForFile(fileName: string): Promise<TSError[]> {
 
         return diagnostics.map(diagnostic => ({
             pos: languageServiceHost.getPositionFromIndex(fileName, diagnostic.start),
-            endPos: languageServiceHost.getPositionFromIndex(fileName, diagnostic.length - diagnostic.start),
+            endPos: languageServiceHost.getPositionFromIndex(fileName, diagnostic.length + diagnostic.start),
             message: diagnostic.messageText, 
             type: diagnostic.category
         }));
