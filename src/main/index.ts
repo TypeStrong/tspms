@@ -5,6 +5,7 @@ import ProjectManager   = require('./projectManager');
 import fs               = require('./fileSystem');
 import ws               = require('./workingSet');
 import project          = require('./project');
+import serviceUtils     = require('./serviceUtils')
 
 export interface Position { 
     line: number; 
@@ -314,26 +315,18 @@ export function getCompletionAtPosition(fileName: string, position: Position): P
         }
 
         var  match: string;
-        //TODO
-//        
-//        var sourceUnit = languageService.getSourceFile(fileName).getSourceFile(),
-//            currentToken = TypeScript.Syntax.findTokenOnLeft(sourceUnit, index),
-//            match: string;
-//
-//        if (currentToken && this.isValidTokenKind(currentToken.kind())) {
-//            match = currentToken.fullText();
-//            if (currentToken.leadingTrivia()) {
-//                match = match.substr(currentToken.leadingTriviaWidth());
-//            }
-//
-//            if (currentToken.trailingTrivia()) {
-//                match = match.substr(0, match.length - currentToken.trailingTriviaWidth());
-//            }
-//
-//            typeScriptEntries = typeScriptEntries.filter(entry => {
-//                return entry.name && entry.name.toLowerCase().indexOf(match.toLowerCase()) === 0;
-//            });
-//        }
+        
+        var sourceFile = languageService.getSourceFile(fileName);
+        var word = serviceUtils.getTouchingWord(sourceFile, index);
+        
+        if (word) {
+            match = word.getText();
+
+            typeScriptEntries = typeScriptEntries.filter(entry => {
+                return entry.name && entry.name.toLowerCase().indexOf(match.toLowerCase()) === 0;
+            });
+        }
+
 
         typeScriptEntries.sort((entry1, entry2) => {
             var match1 = entry1 ? entry1.name.indexOf(match) : -1,
