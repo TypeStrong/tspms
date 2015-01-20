@@ -287,6 +287,8 @@ module LanguageServiceHost {
         return {
             //ts.Logger implementation
             log: () => void 0,
+            error: () => void 0,
+            trace: () => void 0,
 
 
             // LanguageServiceHost implementation
