@@ -156,11 +156,7 @@ describe('LanguageServiceHost', function () {
             expect(languageServiceHost.getScriptIsOpen('file1.ts')).toBe(false);
         });
         
-        it('should returns diagnostic object', function () {
-            //TODO I don't really know what are the spec here
-            expect(languageServiceHost.getLocalizedDiagnosticMessages()).toEqual({});
-        
-        });
+       
         
     });
 });
