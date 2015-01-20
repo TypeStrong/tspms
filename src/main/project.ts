@@ -219,31 +219,36 @@ export function createProject(
      * @param typescriptPath
      */
     function getTypeScriptInfosForPath(typescriptPath: string): TypeScriptInfo {
-        if (!typescriptPath) {
-            return {
-                typeScript:  ts,
-                libLocation: defaultLibLocation
-            };
-        } else {
-            var typescriptServicesFile = path.join(typescriptPath, 'bin', 'typescriptServices.js');
-            try {
-                var generatedTs = require(typescriptPath);
-                return {
-                    typeScript: generatedTs,
-                    libLocation: path.join(typescriptPath, 'lib.d.ts')
-                };
-            } catch(e) {
-                //TODO instead of silently returning default we should handle this error in project
-                //manager and return an error in the linter
-                if (logger.error()) {
-                    logger.log('could not retrieve typescript compiler at path: ' + typescriptPath);
-                }
-                return {
-                    typeScript: ts,
-                    libLocation: defaultLibLocation
-                };
-            }
-        }
+        return {
+            typeScript:  ts,
+            libLocation: defaultLibLocation
+        };
+        //TODO
+//        if (!typescriptPath) {
+//            return {
+//                typeScript:  ts,
+//                libLocation: defaultLibLocation
+//            };
+//        } else {
+//            var typescriptServicesFile = path.join(typescriptPath, 'bin', 'typescriptServices.js');
+//            try {
+//                var generatedTs = require(typescriptPath);
+//                return {
+//                    typeScript: generatedTs,
+//                    libLocation: path.join(typescriptPath, 'lib.d.ts')
+//                };
+//            } catch(e) {
+//                //TODO instead of silently returning default we should handle this error in project
+//                //manager and return an error in the linter
+//                if (logger.error()) {
+//                    logger.log('could not retrieve typescript compiler at path: ' + typescriptPath);
+//                }
+//                return {
+//                    typeScript: ts,
+//                    libLocation: defaultLibLocation
+//                };
+//            }
+//        }
     }
     
     /**
