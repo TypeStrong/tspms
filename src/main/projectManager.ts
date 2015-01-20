@@ -177,8 +177,8 @@ export function init(config: ProjectManagerConfig): Promise<void> {
     projectConfigs = config.projectConfigs;
 
 
-    return queue.init(fileSystem.getProjectRoot().then(projectRootDir => {
-        projectRootDir = projectRootDir;
+    return queue.init(fileSystem.getProjectRoot().then(rootDir => {
+        projectRootDir = rootDir;
         return createProjects();
     }));
 }
