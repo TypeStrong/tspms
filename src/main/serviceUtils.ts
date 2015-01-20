@@ -6,22 +6,27 @@ import SyntaxKind = ts.SyntaxKind
 /* Gets the token whose text has range [start, end) and 
  * position >= start and (position < end or (position === end && token is keyword or identifier))
  */
-export function getTouchingWord(sourceFile: SourceFile, position: number): Node {
-    return getTouchingToken(sourceFile, position, n => isWord(n.kind));
+export function getTouchingWord(sourceFile: SourceFile, position: number, typeScript: typeof ts): Node {
+    return getTouchingToken(sourceFile, position, typeScript, n => isWord(n.kind, typeScript));
 }
 
 
 /** Returns the token if position is in [start, end) or if position === end and includeItemAtEndPosition(token) === true */
-export function getTouchingToken(sourceFile: SourceFile, position: number, includeItemAtEndPosition?: (n: Node) => boolean): Node {
-    return getTokenAtPositionWorker(sourceFile, position, /*allowPositionInLeadingTrivia*/ false, includeItemAtEndPosition);
+export function getTouchingToken(sourceFile: SourceFile, position: number, typeScript: typeof ts, includeItemAtEndPosition?: (n: Node) => boolean): Node {
+    return getTokenAtPositionWorker(sourceFile, position, /*allowPositionInLeadingTrivia*/ false, typeScript, includeItemAtEndPosition);
+}
+
+
+export function getSynTaxKind(type: string, typescript: typeof ts): any {
+    return (<any>typescript).SyntaxKind[type]
 }
 
 
 /** Get the token whose text contains the position */
-function getTokenAtPositionWorker(sourceFile: SourceFile, position: number, allowPositionInLeadingTrivia: boolean, includeItemAtEndPosition: (n: Node) => boolean): Node {
+function getTokenAtPositionWorker(sourceFile: SourceFile, position: number, allowPositionInLeadingTrivia: boolean, typeScript: typeof ts, includeItemAtEndPosition: (n: Node) => boolean): Node {
     var current: Node = sourceFile;
     outer: while (true) {
-        if (isToken(current)) {
+        if (isToken(current, typeScript)) {
             // exit early
             return current;
         }
@@ -32,12 +37,12 @@ function getTokenAtPositionWorker(sourceFile: SourceFile, position: number, allo
             var start = allowPositionInLeadingTrivia ? child.getFullStart() : child.getStart(sourceFile);
             if (start <= position) {
                 var end = child.getEnd();
-                if (position < end || (position === end && child.kind === SyntaxKind.EndOfFileToken)) {
+                if (position < end || (position === end && child.kind === getSynTaxKind("EndOfFileToken", typeScript))) {
                     current = child;
                     continue outer;
                 }
                 else if (includeItemAtEndPosition && end === position) {
-                    var previousToken = findPrecedingToken(position, sourceFile, child);
+                    var previousToken = findPrecedingToken(position, sourceFile, typeScript, child);
                     if (previousToken && includeItemAtEndPosition(previousToken)) {
                         return previousToken;
                     }
@@ -49,11 +54,11 @@ function getTokenAtPositionWorker(sourceFile: SourceFile, position: number, allo
 }
 
 
-export function findPrecedingToken(position: number, sourceFile: SourceFile, startNode?: Node): Node {
+export function findPrecedingToken(position: number, sourceFile: SourceFile, typeScript: typeof ts, startNode?: Node): Node {
     return find(startNode || sourceFile);
 
     function findRightmostToken(n: Node): Node {
-        if (isToken(n)) {
+        if (isToken(n, typeScript)) {
             return n;
         }
 
@@ -64,7 +69,7 @@ export function findPrecedingToken(position: number, sourceFile: SourceFile, sta
     }
 
     function find(n: Node): Node {
-        if (isToken(n)) {
+        if (isToken(n, typeScript)) {
             return n;
         }
 
@@ -88,7 +93,7 @@ export function findPrecedingToken(position: number, sourceFile: SourceFile, sta
 
         //Debug.assert(startNode !== undefined || n.kind === SyntaxKind.SourceFile);
         
-        if (!(startNode !== undefined || n.kind === SyntaxKind.SourceFile)) {
+        if (!(startNode !== undefined || n.kind === getSynTaxKind("SourceFile", typeScript))) {
             throw new Error('invalid assertion')
         }
 
@@ -117,14 +122,14 @@ function nodeHasTokens(n: Node): boolean {
     // Note, that getWidth() does not take trivia into account.
     return n.getWidth() !== 0;
 }
-export function isToken(n: Node): boolean {
-    return n.kind >= SyntaxKind.FirstToken && n.kind <= SyntaxKind.LastToken;
+export function isToken(n: Node , typeScript: typeof ts): boolean {
+    return n.kind >= getSynTaxKind("FirstToken", typeScript) && n.kind <= getSynTaxKind("LastToken", typeScript);
 }
 
-function isWord(kind: SyntaxKind): boolean {
-    return kind === SyntaxKind.Identifier || isKeyword(kind);
+function isWord(kind: SyntaxKind, typeScript: typeof ts): boolean {
+    return kind === getSynTaxKind("Identifier", typeScript) || isKeyword(kind, typeScript);
 }
 
-export function isKeyword(token: SyntaxKind): boolean {
-    return SyntaxKind.FirstKeyword <= token && token <= SyntaxKind.LastKeyword;
+export function isKeyword(token: SyntaxKind , typeScript: typeof ts): boolean {
+    return getSynTaxKind("FirstKeyword", typeScript) <= token && token <= getSynTaxKind("LastKeyword", typeScript);
 }

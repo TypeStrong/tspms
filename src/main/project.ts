@@ -121,6 +121,12 @@ export interface TypeScriptProject {
     getLanguageService(): ts.LanguageService;
     
     
+    /**
+     * return the typescript info used by the project
+     */
+    getTypeScriptInfo(): TypeScriptInfo;
+    
+    
     //-------------------------------
     //  exposed files informations
     //-------------------------------
@@ -206,6 +212,9 @@ export function createProject(
      * location of the typescript 'lib.d.ts' file
      */
     var libLocation: string;
+    
+    
+    var typeScriptInfo: TypeScriptInfo;
     
     
     
@@ -557,7 +566,7 @@ export function createProject(
         workingSet.documentEdited.add(documentEditedHandler);
         fileSystem.projectFilesChanged.add(filesChangeHandler);
         
-        var typeScriptInfo = getTypeScriptInfosForPath(_config.typescriptPath);
+        typeScriptInfo = getTypeScriptInfosForPath(_config.typescriptPath);
         libLocation = typeScriptInfo.libLocation;
         languageServiceHost = LanguageServiceHost.create(baseDirectory, libLocation);
         languageServiceHost.setCompilationSettings(createCompilationSettings());
@@ -626,6 +635,7 @@ export function createProject(
         getLanguageService: () => languageService,
         getLanguageServiceHost: () => languageServiceHost,
         getProjectFilesSet: () => utils.clone(projectFilesSet),
-        getProjectFileKind: getProjectFileKind
+        getProjectFileKind: getProjectFileKind,
+        getTypeScriptInfo: () => typeScriptInfo
     };
 }
