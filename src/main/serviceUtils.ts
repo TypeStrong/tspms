@@ -117,7 +117,7 @@ export function findPrecedingToken(position: number, sourceFile: SourceFile, typ
     }
 }
 
-function nodeHasTokens(n: Node): boolean {
+export function nodeHasTokens(n: Node): boolean {
     // If we have a token or node that has a non-zero width, it must have tokens.
     // Note, that getWidth() does not take trivia into account.
     return n.getWidth() !== 0;
@@ -126,7 +126,7 @@ export function isToken(n: Node , typeScript: typeof ts): boolean {
     return n.kind >= getSynTaxKind("FirstToken", typeScript) && n.kind <= getSynTaxKind("LastToken", typeScript);
 }
 
-function isWord(kind: SyntaxKind, typeScript: typeof ts): boolean {
+export function isWord(kind: SyntaxKind, typeScript: typeof ts): boolean {
     return kind === getSynTaxKind("Identifier", typeScript) || isKeyword(kind, typeScript);
 }
 

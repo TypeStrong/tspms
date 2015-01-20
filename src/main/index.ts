@@ -317,12 +317,12 @@ export function getCompletionAtPosition(fileName: string, position: Position): P
         var  match: string;
         
         var sourceFile = languageService.getSourceFile(fileName);
-        var word = serviceUtils.getTouchingWord(sourceFile, index, project.getTypeScriptInfo().typeScript);
+        var typeScript = project.getTypeScriptInfo().typeScript;
+        var word = serviceUtils.getTouchingWord(sourceFile, index, typeScript);
         
-        if (word) {
+        
+        if (word && serviceUtils.isWord(word.kind, typeScript)) {
             match = word.getText();
-            match.
-
             typeScriptEntries = typeScriptEntries.filter(entry => {
                 return entry.name && entry.name.toLowerCase().indexOf(match.toLowerCase()) === 0;
             });
