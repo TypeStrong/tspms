@@ -8,9 +8,9 @@ MAIN=src/main
 DECLARATION=src/declarations
 __TESTS__=src/main/__tests__
 
-DECLARATIONS=$(DECLARATION)/bluebird.d.ts $(DECLARATION)/core.d.ts $(DECLARATION)/minimatch.d.ts $(DECLARATION)/path.d.ts $(DECLARATION)/typescriptServices.d.ts 
+DECLARATIONS=$(DECLARATION)/bluebird.d.ts $(DECLARATION)/core.d.ts $(DECLARATION)/minimatch.d.ts $(DECLARATION)/path.d.ts $(DECLARATION)/typescript.d.ts 
 
-SOURCES= $(MAIN)/fileSystem.ts $(MAIN)/index.ts $(MAIN)/languageServiceHost.ts  $(MAIN)/project.ts $(MAIN)/projectManager.ts $(MAIN)/utils.ts $(MAIN)/workingSet.ts
+SOURCES= $(MAIN)/fileSystem.ts $(MAIN)/index.ts $(MAIN)/languageServiceHost.ts  $(MAIN)/project.ts $(MAIN)/projectManager.ts $(MAIN)/utils.ts $(MAIN)/workingSet.ts $(MAIN)/serviceUtils.ts
 
 TESTS=$(DECLARATION)/jest.d.ts  $(__TESTS__)/fileSystemMock.ts $(__TESTS__)/workingSetMock.ts $(__TESTS__)/project-tests.ts $(__TESTS__)/languageServiceHost-test.ts $(__TESTS__)/projectManager-test.ts
 
