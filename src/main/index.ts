@@ -22,6 +22,9 @@ export function init(config: ProjectManager.ProjectManagerConfig): Promise<void>
     return ProjectManager.init(config);
 }
 
+export function updateProjectConfigs(configs:  { [projectId: string]: project.TypeScriptProjectConfig; }): Promise<void> {
+    return ProjectManager.updateProjectConfigs(configs);
+}
 
 export function dispose(): void {
     ProjectManager.dispose();
@@ -159,8 +162,8 @@ export function getErrorsForFile(fileName: string): Promise<TSError[]> {
 
 
 export interface TextEdit {
-    pos: Position;
-    endPos: Position;
+    start: number;
+    end: number;
     newText: string;
 }
 
@@ -187,10 +190,9 @@ export function getFormatingForFile(fileName: string, options: ts.FormatCodeOpti
             minChar = languageServiceHost.getIndexFromPosition(fileName, startPos);
             limChar = languageServiceHost.getIndexFromPosition(fileName, endPos);
         }
-
         var result = languageService.getFormattingEditsForRange(fileName, minChar, limChar, options).map(textChange  => ({
-            pos: languageServiceHost.getPositionFromIndex(fileName, textChange.span.start()),
-            endPos: languageServiceHost.getPositionFromIndex(fileName, textChange.span.end() - textChange.span.start()),
+            start: textChange.span.start(),
+            end: textChange.span.end(),
             newText: textChange.newText
         }));
 

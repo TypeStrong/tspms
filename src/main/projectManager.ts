@@ -276,7 +276,7 @@ export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptP
             }
         });
         
-        return Promise.all(promises);
+        return <Promise<void>><any>Promise.all(promises)
     });
 };
 
