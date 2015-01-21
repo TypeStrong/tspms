@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^2.3.5",
+    "bluebird": "^2.8.2",
     "minimatch": "^1.0.0",
     "typescript": "^1.4.1"
   },
