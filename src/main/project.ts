@@ -17,7 +17,8 @@
 import ts           = require('typescript');
 import path         = require('path');
 import minimatch    = require('minimatch');
-import Promise      = require('bluebird');
+import Promise      = require('./promise');
+import BPromise     = require('bluebird');
 
 
 import fs           = require('./fileSystem');
@@ -25,6 +26,7 @@ import ws           = require('./workingSet');
 
 import utils        = require('./utils');
 import PromiseQueue = utils.PromiseQueue
+
 
 
 
@@ -319,7 +321,7 @@ export function createProject(
                 promises.push(addFile(libLocation));
             }
             
-            return Promise.all(promises);
+            return BPromise.all(promises);
         });
     }
     
@@ -347,7 +349,7 @@ export function createProject(
                     promises.push(addFile(referencedFile));
                     addReference(fileName, referencedFile);
                 });
-                return Promise.all(promises);
+                return BPromise.all(promises);
             }, (): any => {
                 delete projectFilesSet[fileName];
             });
@@ -599,7 +601,7 @@ export function createProject(
                 }    
             });
             
-            return Promise.all(promises)
+            return BPromise.all(promises)
                 .then(() => collectFiles())
                 .then(() => updateWorkingSet());
         });

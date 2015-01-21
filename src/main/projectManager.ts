@@ -15,7 +15,8 @@
 'use strict';
 
 
-import Promise = require('bluebird');
+import Promise      = require('./promise');
+import BPromise     = require('bluebird');
 import path = require('path');
 
 
@@ -112,7 +113,7 @@ var projectConfigs: { [projectId: string]: TypeScriptProjectConfig; };
  * create projects from project configs retrieved by the preferenceManager
  */
 function createProjects(): Promise<any> {
-    return Promise.all(
+    return BPromise.all(
         Object.keys(projectConfigs)
             .map(projectId => createProjectFromConfig(projectId, projectConfigs[projectId]))
     );
@@ -255,7 +256,7 @@ export function getProjectForFile(fileName: string): Promise<TypeScriptProject> 
 /* 
  * update / delete / create project according to changes in project configs
  */
-export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }) {
+export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }): Promise<void> {
     projectConfigs = configs;
     return queue.then(() => {
         var promises: Promise<any>[] = [];
@@ -277,7 +278,7 @@ export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptP
             }
         });
         
-        return <Promise<void>><any>Promise.all(promises)
+        return <Promise<void>><any>BPromise.all(promises)
     });
 };
 

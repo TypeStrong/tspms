@@ -11,11 +11,11 @@ __TESTS__=src/main/__tests__
 
 DECLARATIONS=$(DECLARATION)/bluebird.d.ts $(DECLARATION)/core.d.ts $(DECLARATION)/minimatch.d.ts $(DECLARATION)/path.d.ts $(DECLARATION)/typescript.d.ts 
 
-SOURCES= $(MAIN)/fileSystem.ts $(MAIN)/index.ts $(MAIN)/languageServiceHost.ts  $(MAIN)/project.ts $(MAIN)/projectManager.ts $(MAIN)/utils.ts $(MAIN)/workingSet.ts $(MAIN)/serviceUtils.ts
+SOURCES= $(MAIN)/fileSystem.ts $(MAIN)/index.ts $(MAIN)/languageServiceHost.ts $(MAIN)/promise.ts $(MAIN)/project.ts $(MAIN)/projectManager.ts $(MAIN)/utils.ts $(MAIN)/workingSet.ts $(MAIN)/serviceUtils.ts
 
 TESTS=$(DECLARATION)/jest.d.ts  $(__TESTS__)/fileSystemMock.ts $(__TESTS__)/workingSetMock.ts $(__TESTS__)/project-tests.ts $(__TESTS__)/languageServiceHost-test.ts $(__TESTS__)/projectManager-test.ts
 
-GENERATED_DECLARATION=$(OUT_DIR)/index.d.ts $(OUT_DIR)/fileSystem.d.ts  $(OUT_DIR)/languageServiceHost.d.ts  $(OUT_DIR)/project.d.ts $(OUT_DIR)/projectManager.d.ts $(OUT_DIR)/utils.d.ts $(OUT_DIR)/workingSet.d.ts $(OUT_DIR)/serviceUtils.d.ts
+GENERATED_DECLARATION=$(OUT_DIR)/index.d.ts $(OUT_DIR)/fileSystem.d.ts $(OUT_DIR)/promise.d.ts  $(OUT_DIR)/languageServiceHost.d.ts  $(OUT_DIR)/project.d.ts $(OUT_DIR)/projectManager.d.ts $(OUT_DIR)/utils.d.ts $(OUT_DIR)/workingSet.d.ts $(OUT_DIR)/serviceUtils.d.ts
 
 GENERATED_JS=$(OUT_DIR)/index.js $(OUT_DIR)/fileSystem.js  $(OUT_DIR)/languageServiceHost.js  $(OUT_DIR)/project.js $(OUT_DIR)/projectManager.js $(OUT_DIR)/utils.js $(OUT_DIR)/workingSet.js $(OUT_DIR)/serviceUtils.js 
 

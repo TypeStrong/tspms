@@ -1,6 +1,5 @@
-
-import Promise          = require('bluebird');
 import ts               = require('typescript');
+import Promise          = require('./promise');
 import ProjectManager   = require('./projectManager');
 import fs               = require('./fileSystem');
 import ws               = require('./workingSet');

@@ -15,9 +15,10 @@
 'use strict';
 
 
-import Promise = require('bluebird');
-import path = require('path');
-import project = require('./project');
+import Promise                 = require('./promise');
+import BPromise                = require('bluebird');
+import path                    = require('path');
+import project                 = require('./project');
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 
 /**
@@ -41,7 +42,7 @@ export class PromiseQueue {
     private initialized: boolean = false;
     
     constructor() {
-        this.promise = new Promise(resolve => {
+        this.promise = new BPromise(resolve => {
             this.initializer = resolve;    
         });
     }
@@ -60,7 +61,7 @@ export class PromiseQueue {
      */
     init<T>(val: T): Promise<T> {
         if (this.initialized) {
-            this.promise = Promise.cast(val);
+            this.promise = BPromise.cast(val);
         } else {
             this.initialized = true;
             this.initializer(val);

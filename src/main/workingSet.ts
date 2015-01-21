@@ -14,7 +14,7 @@
 
 'use strict';
 
-import Promise = require('bluebird');
+import Promise = require('./promise');
 
 import utils = require('./utils');
 import ISignal = utils.ISignal;
