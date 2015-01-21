@@ -7,7 +7,8 @@ import ws               = require('./workingSet');
 import project          = require('./project');
 import serviceUtils     = require('./serviceUtils')
 
-export interface Position { 
+
+export type Position = { 
     line: number; 
     ch: number; 
 }

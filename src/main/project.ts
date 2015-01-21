@@ -161,7 +161,7 @@ export enum ProjectFileKind {
 
 
 
-interface TypeScriptInfo {
+export type TypeScriptInfo = {
     typeScript: typeof ts
     libLocation: string;
 }

@@ -35,7 +35,7 @@ import PromiseQueue = utils.PromiseQueue;
 
 
 
-export interface ProjectManagerConfig {
+export type ProjectManagerConfig  = {
     /**
      *  location of the default typescript compiler lib.d.ts file
      */
@@ -235,6 +235,7 @@ export function getProjectForFile(fileName: string): Promise<TypeScriptProject> 
         if (!project) {
             var config: TypeScriptProjectConfig = utils.clone(utils.typeScriptProjectConfigDefault);
             config.target = 'es5';
+            config.module = 'commonjs';
             config.sources = [fileName];
             tempProject = project = createProject(
                 projectRootDir,
