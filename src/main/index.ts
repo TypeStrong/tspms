@@ -209,73 +209,6 @@ export function getFormatingForFile(fileName: string, options: ts.FormatCodeOpti
 //--------------------------------------------------------------------------
 
 /**
- * An Enum representing the different kind of hint
- */
-export enum CompletionKind {
-    /**
-     * the completion entry correspond to a class name
-     */
-    CLASS,
-    /**
-     * the completion entry correspond to an interface name
-     */
-    INTERFACE,
-    /**
-     * the completion entry correspond to an enum name
-     */
-    ENUM,
-    /**
-     * the completion entry correspond to a module name
-     */
-    MODULE,
-    /**
-     * the completion entry correspond to a variable name
-     */
-    VARIABLE,
-    /**
-     * the completion entry correspond to a mehtod name
-     */
-    METHOD,
-    /**
-     * the completion entry correspond to a function
-     */
-    FUNCTION,
-    /**
-     * the completion entry correspond to a keyword
-     */
-    KEYWORD,
-    /**
-     * Any other type
-     */
-    DEFAULT
-}
-
-/**
- * Represent an entry in a completion proposal list
- */
-export interface CompletionEntry {
-    /**
-     * the name of the entry (aka: the text to insert)
-     */
-    name: string;
-    
-    /**
-     * type of the symbol of the entry
-     */
-    type: string;
-    
-    /**
-     * the entry kind
-     */
-    kind: CompletionKind;
-    
-    /**
-     * JSDoc contents corresponding to this entry
-     */
-    doc: string;
-}
-
-/**
  * Represent a completion result
  */
 export interface CompletionResult {
@@ -287,7 +220,7 @@ export interface CompletionResult {
     /**
      * list of proposed entries for code completion
      */
-    entries: CompletionEntry[];
+    entries: ts.CompletionEntryDetails[]; 
 }
 
 
@@ -300,7 +233,7 @@ export interface CompletionResult {
  * 
  * @return a promise resolving to a list of proposals
  */
-export function getCompletionAtPosition(fileName: string, position: Position): Promise<CompletionResult> {
+export function getCompletionAtPosition(fileName: string, position: Position, limit = 50, skip = 0): Promise<CompletionResult> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
 
         var languageService = project.getLanguageService(),
@@ -314,7 +247,7 @@ export function getCompletionAtPosition(fileName: string, position: Position): P
             return { entries: [], match: '' };
         }
 
-        var  match: string;
+        var match: string;
         
         var sourceFile = languageService.getSourceFile(fileName);
         var typeScript = project.getTypeScriptInfo().typeScript;
@@ -329,7 +262,9 @@ export function getCompletionAtPosition(fileName: string, position: Position): P
         }
 
 
-        typeScriptEntries.sort((entry1, entry2) => {
+
+        var completionEntries = typeScriptEntries
+        .sort((entry1, entry2) => {
             var match1 = entry1 ? entry1.name.indexOf(match) : -1,
                 match2 = entry2 ? entry2.name.indexOf(match) : -1;
             if (match1 === 0 && match2 !== 0) {
@@ -348,76 +283,9 @@ export function getCompletionAtPosition(fileName: string, position: Position): P
                     return 0;
                 }
             }
-        });
-
-        var completionEntries = typeScriptEntries.map(typeScriptEntry => {
-            var entryInfo = languageService.getCompletionEntryDetails(fileName, index, typeScriptEntry.name),
-                //TODO
-                completionEntry = {
-                    name: typeScriptEntry.name,
-                    kind: CompletionKind.DEFAULT,
-                    type: entryInfo && '', //&& entryInfo.type,
-                    doc: entryInfo && '' //&& entryInfo.docComment
-                };
-
-
-            ///check with this https://github.com/Microsoft/TypeScript/blob/a1e69b0dc2ec43a3b40b77f871d9c676c253ce09/src/services/services.ts#L1171
-            switch (typeScriptEntry.kind) {
-                case ts.ScriptElementKind.unknown:
-                case ts.ScriptElementKind.primitiveType:
-                case ts.ScriptElementKind.scriptElement:
-                    break;
-                case ts.ScriptElementKind.keyword:
-                    completionEntry.kind = CompletionKind.KEYWORD;
-                    break;
-
-                case ts.ScriptElementKind.classElement:
-                    completionEntry.kind = CompletionKind.CLASS;
-                    break;
-                case ts.ScriptElementKind.interfaceElement:
-                    completionEntry.kind = CompletionKind.INTERFACE;
-                    break;
-                case ts.ScriptElementKind.enumElement:
-                    completionEntry.kind = CompletionKind.ENUM;
-                    break;
-                case ts.ScriptElementKind.moduleElement:
-                    completionEntry.kind = CompletionKind.MODULE;
-                    break;
-
-
-                case ts.ScriptElementKind.memberVariableElement:
-                case ts.ScriptElementKind.variableElement:
-                case ts.ScriptElementKind.localVariableElement:
-                case ts.ScriptElementKind.parameterElement:
-                    completionEntry.kind = CompletionKind.VARIABLE;
-                    break;
-
-
-                case ts.ScriptElementKind.memberFunctionElement:
-                case ts.ScriptElementKind.functionElement:
-                case ts.ScriptElementKind.localFunctionElement:
-                    completionEntry.kind = CompletionKind.FUNCTION;
-                    break;
-
-
-                case ts.ScriptElementKind.typeParameterElement:
-                case ts.ScriptElementKind.constructorImplementationElement:
-                case ts.ScriptElementKind.constructSignatureElement:
-                case ts.ScriptElementKind.callSignatureElement:
-                case ts.ScriptElementKind.indexSignatureElement:
-                case ts.ScriptElementKind.memberGetAccessorElement:
-                case ts.ScriptElementKind.memberSetAccessorElement:
-                    //TODO
-//                    if (logger.information()) {
-//                        logger.log('un handled ScriptElementKind in completion list: ' +  typeScriptEntry.kind);
-//                    }
-                    break;
-            }
-            
-            //documentRegistry.releaseDocument(fileName, languageServiceHost.getCompilationSettings());
-
-            return completionEntry;
-        });
+        })
+        .slice(skip, limit + skip)
+        .map(typeScriptEntry => languageService.getCompletionEntryDetails(fileName, index, typeScriptEntry.name));
 
         return {
             entries: completionEntries,
