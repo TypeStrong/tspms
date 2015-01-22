@@ -18,7 +18,8 @@
 
 import fs       = require('../fileSystem');
 import utils    = require('../utils')
-import Promise  = require('bluebird');
+import promise  = require('../promise');
+import Promise  = promise.Promise;
 
 class FileSystem implements fs.IFileSystem {
     
@@ -28,7 +29,7 @@ class FileSystem implements fs.IFileSystem {
     
     
     getProjectRoot() {
-        return Promise.cast('/');
+        return Promise.resolve('/');
     }
     
     getProjectFiles(forceRefresh?: boolean): Promise<string[]> {

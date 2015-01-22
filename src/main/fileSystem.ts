@@ -13,7 +13,7 @@
 //   limitations under the License.
 
 
-import Promise = require('./promise');
+import promise = require('./promise');
 import utils = require('./utils');
 import ISignal = utils.ISignal;
 
@@ -33,7 +33,7 @@ export interface IFileSystem {
     /**
      * return a promise resolving to the project root folder path
      */
-    getProjectRoot(): Promise<string>;
+    getProjectRoot(): promise.Promise<string>;
     
     /**
      * a signal dispatching fine grained change reflecting the change that happens in the working set
@@ -43,14 +43,14 @@ export interface IFileSystem {
     /**
      * return a promise that resolve with an array of string containing all the files of the projects
      */
-    getProjectFiles(): Promise<string[]>;
+    getProjectFiles(): promise.Promise<string[]>;
     
     /**
      * read a file, return a promise with that resolve to the file content
      * 
      * @param path the file to read
      */
-    readFile(path: string): Promise<string>;
+    readFile(path: string): promise.Promise<string>;
 }
 
 

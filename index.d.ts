@@ -1,6 +1,6 @@
 declare module 'typescript-project-services/lib/fileSystem' {
 
-import Promise = require('typescript-project-services/lib/promise');
+import promise = require('typescript-project-services/lib/promise');
 import utils = require('typescript-project-services/lib/utils');
 import ISignal = utils.ISignal;
 /**
@@ -11,7 +11,7 @@ export interface IFileSystem {
     /**
      * return a promise resolving to the project root folder path
      */
-    getProjectRoot(): Promise<string>;
+    getProjectRoot(): promise.Promise<string>;
     /**
      * a signal dispatching fine grained change reflecting the change that happens in the working set
      */
@@ -19,13 +19,13 @@ export interface IFileSystem {
     /**
      * return a promise that resolve with an array of string containing all the files of the projects
      */
-    getProjectFiles(): Promise<string[]>;
+    getProjectFiles(): promise.Promise<string[]>;
     /**
      * read a file, return a promise with that resolve to the file content
      *
      * @param path the file to read
      */
-    readFile(path: string): Promise<string>;
+    readFile(path: string): promise.Promise<string>;
 }
 /**
  * enum representing the kind change possible in the fileSysem
@@ -67,77 +67,19 @@ export interface FileChangeRecord {
 
 declare module 'typescript-project-services/lib/promise' {
 
- module Promise {
-    interface Thenable<R> {
-        then<U>(onFulfilled: (value: R) => Thenable<U>, onRejected: (error: any) => Thenable<U>): Thenable<U>;
-        then<U>(onFulfilled: (value: R) => Thenable<U>, onRejected?: (error: any) => U): Thenable<U>;
-        then<U>(onFulfilled: (value: R) => U, onRejected: (error: any) => Thenable<U>): Thenable<U>;
-        then<U>(onFulfilled?: (value: R) => U, onRejected?: (error: any) => U): Thenable<U>;
-    }
+export interface Thenable<R> {
+    then<U>(onFulfill?: (value: R) => Thenable<U> | U, onReject?: (error: any) => Thenable<U> | U): Promise<U>;
 }
-interface Promise<R> {
-    /**
-     * onFulFill is called when/if "promise" resolves. onRejected is called when/if "promise" rejects.
-     * Both are optional, if either/both are omitted the next onFulfilled/onRejected in the chain is called.
-     * Both callbacks have a single parameter , the fulfillment value or rejection reason.
-     * "then" returns a new promise equivalent to the value you return from onFulfilled/onRejected after
-     * being passed through Promise.resolve.
-     * If an error is thrown in the callback, the returned promise rejects with that error.
-     *
-     * @param onFulFill called when/if "promise" resolves
-     * @param onReject called when/if "promise" rejects
-     */
-    then<U>(onFulfill: (value: R) => Promise.Thenable<U>, onReject: (error: any) => Promise.Thenable<U>): Promise<U>;
-    /**
-     * onFulFill is called when/if "promise" resolves. onRejected is called when/if "promise" rejects.
-     * Both are optional, if either/both are omitted the next onFulfilled/onRejected in the chain is called.
-     * Both callbacks have a single parameter , the fulfillment value or rejection reason.
-     * "then" returns a new promise equivalent to the value you return from onFulfilled/onRejected after
-     * being passed through Promise.resolve.
-     * If an error is thrown in the callback, the returned promise rejects with that error.
-     *
-     * @param onFulFill called when/if "promise" resolves
-     * @param onReject called when/if "promise" rejects
-     */
-    then<U>(onFulfill: (value: R) => Promise.Thenable<U>, onReject?: (error: any) => U): Promise<U>;
-    /**
-     * onFulFill is called when/if "promise" resolves. onRejected is called when/if "promise" rejects.
-     * Both are optional, if either/both are omitted the next onFulfilled/onRejected in the chain is called.
-     * Both callbacks have a single parameter , the fulfillment value or rejection reason.
-     * "then" returns a new promise equivalent to the value you return from onFulfilled/onRejected after
-     * being passed through Promise.resolve.
-     * If an error is thrown in the callback, the returned promise rejects with that error.
-     *
-     * @param onFulFill called when/if "promise" resolves
-     * @param onReject called when/if "promise" rejects
-     */
-    then<U>(onFulfill: (value: R) => U, onReject: (error: any) => Promise.Thenable<U>): Promise<U>;
-    /**
-     * onFulFill is called when/if "promise" resolves. onRejected is called when/if "promise" rejects.
-     * Both are optional, if either/both are omitted the next onFulfilled/onRejected in the chain is called.
-     * Both callbacks have a single parameter , the fulfillment value or rejection reason.
-     * "then" returns a new promise equivalent to the value you return from onFulfilled/onRejected after
-     * being passed through Promise.resolve.
-     * If an error is thrown in the callback, the returned promise rejects with that error.
-     *
-     * @param onFulFill called when/if "promise" resolves
-     * @param onReject called when/if "promise" rejects
-     */
-    then<U>(onFulfill?: (value: R) => U, onReject?: (error: any) => U): Promise<U>;
-    /**
-     * Sugar for promise.then(undefined, onRejected)
-     *
-     * @param onReject called when/if "promise" rejects
-     */
-    catch<U>(onReject?: (error: any) => Promise.Thenable<U>): Promise<U>;
-    /**
-     * Sugar for promise.then(undefined, onRejected)
-     *
-     * @param onReject called when/if "promise" rejects
-     */
-    catch<U>(onReject?: (error: any) => U): Promise<U>;
+export class Promise<R> implements Thenable<R> {
+    constructor(callback: (resolve: (result: R | Thenable<R>) => void, reject: (error: any) => void) => void);
+    then<U>(onFulfill?: (value: R) => Thenable<U> | U, onReject?: (error: any) => Thenable<U> | U): Promise<U>;
+    catch<U>(onReject?: (error: any) => Thenable<U> | U): Promise<U>;
+    static resolve<T>(object?: T | Thenable<T>): Promise<T>;
+    static reject<T>(error?: any): Promise<T>;
+    static all<T>(promises: (Thenable<T> | T)[]): Promise<T[]>;
+    static race<T>(promises: (Thenable<T> | T)[]): Promise<T>;
 }
-export = Promise;
+export function injectPromiseLibrary(promise: typeof Promise): void;
 
 
 }
@@ -231,7 +173,7 @@ export = LanguageServiceHost;
 declare module 'typescript-project-services/lib/project' {
 
 import ts = require('typescript');
-import Promise = require('typescript-project-services/lib/promise');
+import promise = require('typescript-project-services/lib/promise');
 import fs = require('typescript-project-services/lib/fileSystem');
 import ws = require('typescript-project-services/lib/workingSet');
 import LanguageServiceHost = require('typescript-project-services/lib/languageServiceHost');
@@ -273,11 +215,11 @@ export interface TypeScriptProject {
     /**
      * Initialize the project an his component
      */
-    init(): Promise<void>;
+    init(): promise.Promise<void>;
     /**
      * update a project with a new config
      */
-    update(config: TypeScriptProjectConfig): Promise<void>;
+    update(config: TypeScriptProjectConfig): promise.Promise<void>;
     /**
      * dispose the project
      */
@@ -331,7 +273,7 @@ export function createProject(baseDirectory: string, config: TypeScriptProjectCo
 
 declare module 'typescript-project-services/lib/projectManager' {
 
-import Promise = require('typescript-project-services/lib/promise');
+import promise = require('typescript-project-services/lib/promise');
 import fs = require('typescript-project-services/lib/fileSystem');
 import ws = require('typescript-project-services/lib/workingSet');
 import project = require('typescript-project-services/lib/project');
@@ -362,7 +304,7 @@ export type ProjectManagerConfig = {
  *
  * @param config ProjectManager configuration
  */
-export function init(config: ProjectManagerConfig): Promise<void>;
+export function init(config: ProjectManagerConfig): promise.Promise<void>;
 /**
  * dispose the project manager
  */
@@ -374,17 +316,17 @@ export function dispose(): void;
  *
  * @param fileName the path of the typesrcript file for which project are looked fo
  */
-export function getProjectForFile(fileName: string): Promise<TypeScriptProject>;
+export function getProjectForFile(fileName: string): promise.Promise<TypeScriptProject>;
 export function updateProjectConfigs(configs: {
     [projectId: string]: TypeScriptProjectConfig;
-}): Promise<void>;
+}): promise.Promise<void>;
 
 
 }
 
 declare module 'typescript-project-services/lib/utils' {
 
-import Promise = require('typescript-project-services/lib/promise');
+import promise = require('typescript-project-services/lib/promise');
 import project = require('typescript-project-services/lib/project');
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 /**
@@ -409,15 +351,15 @@ export class PromiseQueue {
      *
      * @param val the value passed as initialial result
      */
-    init<T>(val: Promise<T>): Promise<T>;
+    init<T>(val: promise.Promise<T>): promise.Promise<T>;
     /**
      * enqueue an action
      */
-    then<T>(action: () => Promise<T>): Promise<T>;
+    then<T>(action: () => promise.Promise<T>): promise.Promise<T>;
     /**
      * enqueue an action
      */
-    then<T>(action: () => T): Promise<T>;
+    then<T>(action: () => T): promise.Promise<T>;
 }
 export function mapValues<T>(map: {
     [index: string]: T;
@@ -521,7 +463,7 @@ export function binarySearch(array: number[], value: number): number;
 
 declare module 'typescript-project-services/lib/workingSet' {
 
-import Promise = require('typescript-project-services/lib/promise');
+import promise = require('typescript-project-services/lib/promise');
 import utils = require('typescript-project-services/lib/utils');
 import ISignal = utils.ISignal;
 /**
@@ -531,7 +473,7 @@ export interface IWorkingSet {
     /**
      * list of files in the working set
      */
-    getFiles(): Promise<string[]>;
+    getFiles(): promise.Promise<string[]>;
     /**
      * a signal dispatching events when change occured in the working set
      */
@@ -631,17 +573,18 @@ export function isKeyword(token: SyntaxKind, typeScript: typeof ts): boolean;
 declare module 'typescript-project-services' {
 
 import ts = require('typescript');
-import Promise = require('typescript-project-services/lib/promise');
+import promise = require('typescript-project-services/lib/promise');
 import ProjectManager = require('typescript-project-services/lib/projectManager');
 import project = require('typescript-project-services/lib/project');
 export type Position = {
     line: number;
     ch: number;
 };
-export function init(config: ProjectManager.ProjectManagerConfig): Promise<void>;
+export function injectPromiseLibrary(lib: typeof promise.Promise): void;
+export function init(config: ProjectManager.ProjectManagerConfig): promise.Promise<void>;
 export function updateProjectConfigs(configs: {
     [projectId: string]: project.TypeScriptProjectConfig;
-}): Promise<void>;
+}): promise.Promise<void>;
 export function dispose(): void;
 /**
  * Represent definition info of a symbol
@@ -679,7 +622,7 @@ export interface DefinitionInfo {
  *
  * @return a promise resolving to a list of definition info
  */
-export function getDefinitionAtPosition(fileName: string, position: Position): Promise<DefinitionInfo[]>;
+export function getDefinitionAtPosition(fileName: string, position: Position): promise.Promise<DefinitionInfo[]>;
 export enum DiagnosticCategory {
     Warning = 0,
     Error = 1,
@@ -697,7 +640,7 @@ export interface TSError {
  *
  * @return a promise resolving to a list of errors
  */
-export function getErrorsForFile(fileName: string): Promise<TSError[]>;
+export function getErrorsForFile(fileName: string): promise.Promise<TSError[]>;
 export interface TextEdit {
     start: number;
     end: number;
@@ -712,7 +655,7 @@ export interface TextEdit {
  *
  * @return a promise resolving to a formating range info
  */
-export function getFormatingForFile(fileName: string, options: ts.FormatCodeOptions, startPos?: Position, endPos?: Position): Promise<TextEdit[]>;
+export function getFormatingForFile(fileName: string, options: ts.FormatCodeOptions, startPos?: Position, endPos?: Position): promise.Promise<TextEdit[]>;
 /**
  * Represent a completion result
  */
@@ -733,7 +676,7 @@ export interface CompletionResult {
  *
  * @return a promise resolving to a list of proposals
  */
-export function getCompletionAtPosition(fileName: string, position: Position, limit?: number, skip?: number): Promise<CompletionResult>;
+export function getCompletionAtPosition(fileName: string, position: Position, limit?: number, skip?: number): promise.Promise<CompletionResult>;
 
 
 }

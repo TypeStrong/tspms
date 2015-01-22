@@ -14,7 +14,7 @@
 
 'use strict';
 
-import Promise = require('./promise');
+import promise = require('./promise');
 
 import utils = require('./utils');
 import ISignal = utils.ISignal;
@@ -34,7 +34,7 @@ export interface IWorkingSet {
     /**
      * list of files in the working set
      */
-    getFiles(): Promise<string[]>;
+    getFiles(): promise.Promise<string[]>;
     
     /**
      * a signal dispatching events when change occured in the working set

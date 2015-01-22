@@ -1,5 +1,5 @@
 import ts               = require('typescript');
-import Promise          = require('./promise');
+import promise          = require('./promise');
 import ProjectManager   = require('./projectManager');
 import fs               = require('./fileSystem');
 import ws               = require('./workingSet');
@@ -12,17 +12,29 @@ export type Position = {
     ch: number; 
 }
 
+
+//--------------------------------------------------------------------------
+//
+//  Install Promise
+//
+//--------------------------------------------------------------------------
+export function injectPromiseLibrary(lib: typeof promise.Promise) {
+    promise.injectPromiseLibrary(lib);
+}
+
+
+
 //--------------------------------------------------------------------------
 //
 //  Initialization
 //
 //--------------------------------------------------------------------------
 
-export function init(config: ProjectManager.ProjectManagerConfig): Promise<void> {
+export function init(config: ProjectManager.ProjectManagerConfig): promise.Promise<void> {
     return ProjectManager.init(config);
 }
 
-export function updateProjectConfigs(configs:  { [projectId: string]: project.TypeScriptProjectConfig; }): Promise<void> {
+export function updateProjectConfigs(configs:  { [projectId: string]: project.TypeScriptProjectConfig; }): promise.Promise<void> {
     return ProjectManager.updateProjectConfigs(configs);
 }
 
@@ -82,7 +94,7 @@ export interface DefinitionInfo {
  * @return a promise resolving to a list of definition info
  */
 
-export function getDefinitionAtPosition(fileName: string, position: Position ): Promise<DefinitionInfo[]> {
+export function getDefinitionAtPosition(fileName: string, position: Position ): promise.Promise<DefinitionInfo[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService(),
             languageServiceHost = project.getLanguageServiceHost(),
@@ -133,7 +145,7 @@ export interface TSError {
  * 
  * @return a promise resolving to a list of errors
  */
-export function getErrorsForFile(fileName: string): Promise<TSError[]> {
+export function getErrorsForFile(fileName: string): promise.Promise<TSError[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService(),
             languageServiceHost = project.getLanguageServiceHost(),
@@ -176,7 +188,7 @@ export interface TextEdit {
  * 
  * @return a promise resolving to a formating range info
  */
-export function getFormatingForFile(fileName: string, options: ts.FormatCodeOptions, startPos?: Position, endPos?: Position): Promise<TextEdit[]> {
+export function getFormatingForFile(fileName: string, options: ts.FormatCodeOptions, startPos?: Position, endPos?: Position): promise.Promise<TextEdit[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
 
         var languageServiceHost = project.getLanguageServiceHost(),
@@ -235,7 +247,7 @@ export interface CompletionResult {
  * 
  * @return a promise resolving to a list of proposals
  */
-export function getCompletionAtPosition(fileName: string, position: Position, limit = 50, skip = 0): Promise<CompletionResult> {
+export function getCompletionAtPosition(fileName: string, position: Position, limit = 50, skip = 0): promise.Promise<CompletionResult> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
 
         var languageService = project.getLanguageService(),

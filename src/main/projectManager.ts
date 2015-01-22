@@ -15,8 +15,7 @@
 'use strict';
 
 
-import Promise      = require('./promise');
-import BPromise     = require('bluebird');
+import promise      = require('./promise');
 import path = require('path');
 
 
@@ -112,8 +111,8 @@ var projectConfigs: { [projectId: string]: TypeScriptProjectConfig; };
 /**
  * create projects from project configs retrieved by the preferenceManager
  */
-function createProjects(): Promise<any> {
-    return BPromise.all(
+function createProjects(): promise.Promise<any> {
+    return promise.Promise.all(
         Object.keys(projectConfigs)
             .map(projectId => createProjectFromConfig(projectId, projectConfigs[projectId]))
     );
@@ -170,7 +169,7 @@ function createProjectFromConfig(projectId: string, config: TypeScriptProjectCon
  * 
  * @param config ProjectManager configuration
  */
-export function init(config: ProjectManagerConfig): Promise<void> {
+export function init(config: ProjectManagerConfig): promise.Promise<void> {
 
     defaultTypeScriptLocation = config.defaultTypeScriptLocation;
     workingSet = config.workingSet;
@@ -199,7 +198,7 @@ export function dispose(): void {
  * 
  * @param fileName the path of the typesrcript file for which project are looked fo
  */
-export function getProjectForFile(fileName: string): Promise<TypeScriptProject> {
+export function getProjectForFile(fileName: string): promise.Promise<TypeScriptProject> {
     return queue.then((): any => {
         var projects = utils.mapValues(projectMap),
             project: TypeScriptProject = null;
@@ -256,10 +255,10 @@ export function getProjectForFile(fileName: string): Promise<TypeScriptProject> 
 /* 
  * update / delete / create project according to changes in project configs
  */
-export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }): Promise<void> {
+export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }): promise.Promise<void> {
     projectConfigs = configs;
     return queue.then(() => {
-        var promises: Promise<any>[] = [];
+        var promises: promise.Promise<any>[] = [];
         Object.keys(projectMap).forEach(projectId => {
             var project = projectMap[projectId],
                 config = projectConfigs[projectId];
@@ -278,7 +277,7 @@ export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptP
             }
         });
         
-        return <Promise<void>><any>BPromise.all(promises)
+        return <promise.Promise<void>><any>promise.Promise.all(promises)
     });
 };
 

@@ -15,8 +15,7 @@
 'use strict';
 
 
-import Promise                 = require('./promise');
-import BPromise                = require('bluebird');
+import promise                 = require('./promise');
 import path                    = require('path');
 import project                 = require('./project');
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
@@ -29,7 +28,7 @@ export class PromiseQueue {
     /**
      * the current promise
      */
-    private promise: Promise<any>;
+    private promise: promise.Promise<any>;
     
     /**
      * the resolve function of the initial promise
@@ -42,7 +41,7 @@ export class PromiseQueue {
     private initialized: boolean = false;
     
     constructor() {
-        this.promise = new BPromise(resolve => {
+        this.promise = new promise.Promise(resolve => {
             this.initializer = resolve;    
         });
     }
@@ -52,16 +51,16 @@ export class PromiseQueue {
      * 
      * @param val the value passed as initialial result
      */
-    init<T>(val: Promise<T>): Promise<T>;
+    init<T>(val: promise.Promise<T>): promise.Promise<T>;
     
     /**
      * initialize the queue subsequent call reset the queue
      * 
      * @param val the value passed as initialial result
      */
-    init<T>(val: T): Promise<T> {
+    init<T>(val: T): promise.Promise<T> {
         if (this.initialized) {
-            this.promise = BPromise.cast(val);
+            this.promise = promise.Promise.resolve(val);
         } else {
             this.initialized = true;
             this.initializer(val);
@@ -72,15 +71,15 @@ export class PromiseQueue {
     /**
      * enqueue an action
      */
-    then<T>(action: () => Promise<T>): Promise<T>;
+    then<T>(action: () => promise.Promise<T>): promise.Promise<T>;
     /**
      * enqueue an action
      */
-    then<T>(action: () => T): Promise<T>;
+    then<T>(action: () => T): promise.Promise<T>;
     /**
      * enqueue an action
      */
-    then(action: () => void): Promise<void> {
+    then(action: () => void): promise.Promise<void> {
         return this.promise = this.promise.then(
             () => action(), 
             () => action()

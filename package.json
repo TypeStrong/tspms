@@ -9,17 +9,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^2.8.2",
     "minimatch": "^1.0.0",
     "typescript": "^1.4.1"
   },
   "devDependencies": {
     "jest-cli": "^0.2.1",
-    "minimist": "^1.1.0"
+    "minimist": "^1.1.0",
+    "promises-aplus-tests": "*"
   },
   "jest": {
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules/",
+      "<rootDir>/built/promise.js",
       "assert",
       "buffer",
       "child_process",

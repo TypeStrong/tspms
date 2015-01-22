@@ -17,8 +17,7 @@
 import ts           = require('typescript');
 import path         = require('path');
 import minimatch    = require('minimatch');
-import Promise      = require('./promise');
-import BPromise     = require('bluebird');
+import promise      = require('./promise');
 
 
 import fs           = require('./fileSystem');
@@ -97,13 +96,13 @@ export interface TypeScriptProject {
     /**
      * Initialize the project an his component
      */
-    init(): Promise<void>;
+    init(): promise.Promise<void>;
 
     
     /**
      * update a project with a new config
      */
-    update(config: TypeScriptProjectConfig): Promise<void>;
+    update(config: TypeScriptProjectConfig): promise.Promise<void>;
     
     /**
      * dispose the project
@@ -308,9 +307,9 @@ export function createProject(
     /**
      * retrieve files content for path match described in the config
      */
-    function collectFiles(): Promise<any> { 
+    function collectFiles(): promise.Promise<any> { 
         return fileSystem.getProjectFiles().then(files => {
-            var promises: Promise<any>[] = [];
+            var promises: promise.Promise<any>[] = [];
             files.forEach(fileName => {
                 if (isProjectSourceFile(fileName) && !projectFilesSet[fileName]) {
                     promises.push(addFile(fileName, false));
@@ -321,7 +320,7 @@ export function createProject(
                 promises.push(addFile(libLocation));
             }
             
-            return BPromise.all(promises);
+            return promise.Promise.all(promises);
         });
     }
     
@@ -339,17 +338,17 @@ export function createProject(
      * add a file to the project and all file that this file reference
      * @param path
      */
-    function addFile(fileName: string, notify = true): Promise<any>  {
+    function addFile(fileName: string, notify = true): promise.Promise<any>  {
         if (!projectFilesSet[fileName]) {
             projectFilesSet[fileName] = true;
             return fileSystem.readFile(fileName).then(content => {
-                var promises: Promise<any>[] = [];
+                var promises: promise.Promise<any>[] = [];
                 languageServiceHost.addScript(fileName, content);
                 getReferencedOrImportedFiles(fileName).forEach(referencedFile => {
                     promises.push(addFile(referencedFile));
                     addReference(fileName, referencedFile);
                 });
-                return BPromise.all(promises);
+                return promise.Promise.all(promises);
             }, (): any => {
                 delete projectFilesSet[fileName];
             });
@@ -561,7 +560,7 @@ export function createProject(
     /**
      * Initialize the project an his component
      */
-    function init(): Promise<void> {
+    function init(): promise.Promise<void> {
         projectFilesSet = Object.create(null);
         references = Object.create(null);
         workingSet.workingSetChanged.add(workingSetChangedHandler);
@@ -580,7 +579,7 @@ export function createProject(
     /**
      * update a project with a new config
      */
-    function update(config: TypeScriptProjectConfig): Promise<void> {
+    function update(config: TypeScriptProjectConfig): promise.Promise<void> {
         
         if (config.typescriptPath !== _config.typescriptPath) {
             return init();
@@ -594,14 +593,14 @@ export function createProject(
         _config = config;
         return queue.then(() => {
             languageServiceHost.setCompilationSettings(createCompilationSettings());
-            var promises: Promise<any>[] = [];
+            var promises: promise.Promise<any>[] = [];
             pojectSources.forEach(fileName => {
                 if (!isProjectSourceFile(fileName)) {
                     removeFile(fileName);
                 }    
             });
             
-            return BPromise.all(promises)
+            return promise.Promise.all(promises)
                 .then(() => collectFiles())
                 .then(() => updateWorkingSet());
         });

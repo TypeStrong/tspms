@@ -18,7 +18,8 @@
 
 import ws = require('../workingSet');
 import utils = require('../utils');
-import Promise = require('bluebird');
+import promise  = require('../promise');
+import Promise  = promise.Promise;
 
 class WorkingSetMock implements ws.IWorkingSet {
     files: string [] = [];
@@ -26,7 +27,7 @@ class WorkingSetMock implements ws.IWorkingSet {
     documentEdited = new utils.Signal<ws.DocumentChangeRecord>();
     
     getFiles() {
-        return Promise.cast(this.files);
+        return Promise.resolve(this.files);
     }
     
     addFiles(paths: string[]) {

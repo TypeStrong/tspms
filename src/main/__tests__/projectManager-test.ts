@@ -24,7 +24,8 @@ import projectManager = require('../projectManager');
 import TypeScriptProject = require('../project');
 import utils = require('../utils');
 import FileSystemMock = require('./fileSystemMock');
-import Promise = require('bluebird');
+import promise  = require('../promise');
+import Promise  = promise.Promise;
 
 describe('TypeScriptProjectManager', function () {
     var fileSystemMock: FileSystemMock,
@@ -165,6 +166,7 @@ describe('TypeScriptProjectManager', function () {
     
     describe('getProjectForFiles', function () { 
         beforeEach(function () {
+            (<any>jest).useRealTimers();
             var i = 0;
             createProjectMock.mockImpl(function () {
                 var project = <any>utils.clone(projectSpy);
@@ -222,6 +224,10 @@ describe('TypeScriptProjectManager', function () {
             });
         });
         
+        afterEach(function () {
+            (<any>jest).useFakeTimers();
+        })
+        
         pit('should return a project that have the file as source if this project exist ', function () {
             return projectManager.getProjectForFile('/file2.ts').then((project: any) => {
                 expect(project.id).toBe(1);  
@@ -243,19 +249,20 @@ describe('TypeScriptProjectManager', function () {
         });
         
         pit('should recreate a temp project if no project has file as source or reference nor the temp project', function () {
-            projectManager.getProjectForFile('/file5.ts');
-            jest.runAllTimers();
-            return projectManager.getProjectForFile('/file5.ts').then((project: any) => {
-                expect(project.id).toBe(3);  
+            return projectManager.getProjectForFile('/file5.ts').then(function () {
+                return projectManager.getProjectForFile('/file5.ts').then((project: any) => {
+                    expect(project.id).toBe(3);  
+                });
             });
         });
 
         pit('should not recreate a temp project if the temp project has file as source or reference', function () {
-            projectManager.getProjectForFile('/file3.ts');
-            jest.runAllTimers();
-            return projectManager.getProjectForFile('/file3.ts').then((project: any) => {
-                expect(project.id).toBe(2);  
-            });
+            return projectManager.getProjectForFile('/file3.ts').then(function () {
+                return projectManager.getProjectForFile('/file3.ts').then((project: any) => {
+                    expect(project.id).toBe(2);  
+                });
+            })
+            
         });
     });
     
