@@ -55,6 +55,7 @@ module.exports = function (grunt) {
         
         exec: {
             jest: './node_modules/.bin/jest',
+            jest_coverage: './node_modules/.bin/jest --coverage',
             jest_debug: 'node --debug-brk --harmony ./node_modules/.bin/jest --runInBand',
             test_promise: 'node ./node_modules/.bin/promises-aplus-tests ./scripts/promise-test-adapter.js',
             concat_declarations: {
@@ -76,12 +77,12 @@ module.exports = function (grunt) {
     });
     
     grunt.registerTask('test', 'exec:jest');
+    grunt.registerTask('coverage', 'exec:jest_coverage');
     grunt.registerTask('test-debug', 'exec:jest_debug');
     
-    
-    grunt.registerTask('default', ['clean:built', 'typescript:dev', 'test']);
     grunt.registerTask('release', ['clean:lib', 'typescript:release', 'exec:concat_declarations', 'clean:declarations' ]);
     grunt.registerTask('test-promise', ['clean:built', 'typescript:dev','exec:test_promise' ]);
     
+     grunt.registerTask('default', ['clean:built', 'typescript:dev', 'test']);
     
 };
