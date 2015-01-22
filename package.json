@@ -13,6 +13,10 @@
     "typescript": "^1.4.1"
   },
   "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-exec": "^0.4.6",
+    "grunt-typescript": "^0.6.1",
     "jest-cli": "^0.2.1",
     "minimist": "^1.1.0",
     "promises-aplus-tests": "*"

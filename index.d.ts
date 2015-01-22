@@ -65,25 +65,6 @@ export type FileChangeRecord = {
 
 }
 
-declare module 'typescript-project-services/lib/promise' {
-
-export interface Thenable<R> {
-    then<U>(onFulfill?: (value: R) => Thenable<U> | U, onReject?: (error: any) => Thenable<U> | U): Promise<U>;
-}
-export class Promise<R> implements Thenable<R> {
-    constructor(callback: (resolve: (result: R | Thenable<R>) => void, reject: (error: any) => void) => void);
-    then<U>(onFulfill?: (value: R) => Thenable<U> | U, onReject?: (error: any) => Thenable<U> | U): Promise<U>;
-    catch<U>(onReject?: (error: any) => Thenable<U> | U): Promise<U>;
-    static resolve<T>(object?: T | Thenable<T>): Promise<T>;
-    static reject<T>(error?: any): Promise<T>;
-    static all<T>(promises: (Thenable<T> | T)[]): Promise<T[]>;
-    static race<T>(promises: (Thenable<T> | T)[]): Promise<T>;
-}
-export function injectPromiseLibrary(promise: typeof Promise): void;
-
-
-}
-
 declare module 'typescript-project-services/lib/languageServiceHost' {
 
 import ts = require('typescript');
@@ -324,6 +305,44 @@ export function updateProjectConfigs(configs: {
 
 }
 
+declare module 'typescript-project-services/lib/promise' {
+
+export interface Thenable<R> {
+    then<U>(onFulfill?: (value: R) => Thenable<U> | U, onReject?: (error: any) => Thenable<U> | U): Promise<U>;
+}
+export class Promise<R> implements Thenable<R> {
+    constructor(callback: (resolve: (result: R | Thenable<R>) => void, reject: (error: any) => void) => void);
+    then<U>(onFulfill?: (value: R) => Thenable<U> | U, onReject?: (error: any) => Thenable<U> | U): Promise<U>;
+    catch<U>(onReject?: (error: any) => Thenable<U> | U): Promise<U>;
+    static resolve<T>(object?: T | Thenable<T>): Promise<T>;
+    static reject<T>(error?: any): Promise<T>;
+    static all<T>(promises: (Thenable<T> | T)[]): Promise<T[]>;
+    static race<T>(promises: (Thenable<T> | T)[]): Promise<T>;
+}
+export function injectPromiseLibrary(promise: typeof Promise): void;
+
+
+}
+
+declare module 'typescript-project-services/lib/serviceUtils' {
+
+import ts = require('typescript');
+import SourceFile = ts.SourceFile;
+import Node = ts.Node;
+import SyntaxKind = ts.SyntaxKind;
+export function getTouchingWord(sourceFile: SourceFile, position: number, typeScript: typeof ts): Node;
+/** Returns the token if position is in [start, end) or if position === end and includeItemAtEndPosition(token) === true */
+export function getTouchingToken(sourceFile: SourceFile, position: number, typeScript: typeof ts, includeItemAtEndPosition?: (n: Node) => boolean): Node;
+export function getSynTaxKind(type: string, typescript: typeof ts): any;
+export function findPrecedingToken(position: number, sourceFile: SourceFile, typeScript: typeof ts, startNode?: Node): Node;
+export function nodeHasTokens(n: Node): boolean;
+export function isToken(n: Node, typeScript: typeof ts): boolean;
+export function isWord(kind: SyntaxKind, typeScript: typeof ts): boolean;
+export function isKeyword(token: SyntaxKind, typeScript: typeof ts): boolean;
+
+
+}
+
 declare module 'typescript-project-services/lib/utils' {
 
 import promise = require('typescript-project-services/lib/promise');
@@ -547,25 +566,6 @@ export type DocumentChangeRecord = {
      */
     documentText: string;
 };
-
-
-}
-
-declare module 'typescript-project-services/lib/serviceUtils' {
-
-import ts = require('typescript');
-import SourceFile = ts.SourceFile;
-import Node = ts.Node;
-import SyntaxKind = ts.SyntaxKind;
-export function getTouchingWord(sourceFile: SourceFile, position: number, typeScript: typeof ts): Node;
-/** Returns the token if position is in [start, end) or if position === end and includeItemAtEndPosition(token) === true */
-export function getTouchingToken(sourceFile: SourceFile, position: number, typeScript: typeof ts, includeItemAtEndPosition?: (n: Node) => boolean): Node;
-export function getSynTaxKind(type: string, typescript: typeof ts): any;
-export function findPrecedingToken(position: number, sourceFile: SourceFile, typeScript: typeof ts, startNode?: Node): Node;
-export function nodeHasTokens(n: Node): boolean;
-export function isToken(n: Node, typeScript: typeof ts): boolean;
-export function isWord(kind: SyntaxKind, typeScript: typeof ts): boolean;
-export function isKeyword(token: SyntaxKind, typeScript: typeof ts): boolean;
 
 
 }
