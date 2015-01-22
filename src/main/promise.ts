@@ -128,7 +128,7 @@ declare function setTimeout(callback: () => any, time?: number): number;
 
 
 
-var queue: (() => any)[] = [];
+var queue: (() => void)[] = [];
 function drainQueue() {
     while (queue.length > 0) {
         var fn = queue.shift();
@@ -136,7 +136,7 @@ function drainQueue() {
     }   
 }
 
-function schedule(callback: () => any) {
+function schedule(callback: () => void) {
     queue.push(callback);
     setTimeout(drainQueue, 0)
 }

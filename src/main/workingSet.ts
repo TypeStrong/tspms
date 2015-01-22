@@ -58,7 +58,7 @@ export interface IWorkingSet {
 /**
  * describe change in the working set
  */
-export interface WorkingSetChangeRecord {
+export type WorkingSetChangeRecord = {
     /**
      * kind of change that occured in the working set
      */
@@ -74,7 +74,7 @@ export interface WorkingSetChangeRecord {
 /**
  * enum listing the change kind that occur in a working set
  */
-export enum WorkingSetChangeKind {
+export const enum WorkingSetChangeKind {
     ADD,
     REMOVE
 }
@@ -89,7 +89,7 @@ export enum WorkingSetChangeKind {
 /**
  * describe a change in a document
  */
-export interface DocumentChangeDescriptor {
+export type DocumentChangeDescriptor = {
     
     /**
      * start position of the change
@@ -116,7 +116,7 @@ export interface DocumentChangeDescriptor {
 /**
  * describe a list of change in a document
  */
-export interface DocumentChangeRecord {
+export type DocumentChangeRecord = {
     /**
      * path of the files that has changed
      */

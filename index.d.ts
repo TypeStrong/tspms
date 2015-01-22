@@ -30,7 +30,7 @@ export interface IFileSystem {
 /**
  * enum representing the kind change possible in the fileSysem
  */
-export enum FileChangeKind {
+export const enum FileChangeKind {
     /**
      * a file has been added
      */
@@ -51,7 +51,7 @@ export enum FileChangeKind {
 /**
  * FileSystem change descriptor
  */
-export interface FileChangeRecord {
+export type FileChangeRecord = {
     /**
      * kind of change
      */
@@ -60,7 +60,7 @@ export interface FileChangeRecord {
      * name of the file that have changed
      */
     fileName: string;
-}
+};
 
 
 }
@@ -180,7 +180,7 @@ import LanguageServiceHost = require('typescript-project-services/lib/languageSe
 /**
  * Project Configuration
  */
-export interface TypeScriptProjectConfig {
+export type TypeScriptProjectConfig = {
     /**
      * Array of minimatch pattern string representing
      * sources of a project
@@ -210,7 +210,7 @@ export interface TypeScriptProjectConfig {
      *  Warn on expressions and declarations with an implied 'any' type.
      */
     noImplicitAny?: boolean;
-}
+};
 export interface TypeScriptProject {
     /**
      * Initialize the project an his component
@@ -248,7 +248,7 @@ export interface TypeScriptProject {
      */
     getProjectFileKind(fileName: string): ProjectFileKind;
 }
-export enum ProjectFileKind {
+export const enum ProjectFileKind {
     /**
      * the file is not a part of the project
      */
@@ -486,7 +486,7 @@ export interface IWorkingSet {
 /**
  * describe change in the working set
  */
-export interface WorkingSetChangeRecord {
+export type WorkingSetChangeRecord = {
     /**
      * kind of change that occured in the working set
      */
@@ -495,18 +495,18 @@ export interface WorkingSetChangeRecord {
      * list of paths that has been added or removed from the working set
      */
     paths: string[];
-}
+};
 /**
  * enum listing the change kind that occur in a working set
  */
-export enum WorkingSetChangeKind {
+export const enum WorkingSetChangeKind {
     ADD = 0,
     REMOVE = 1,
 }
 /**
  * describe a change in a document
  */
-export interface DocumentChangeDescriptor {
+export type DocumentChangeDescriptor = {
     /**
      * start position of the change
      */
@@ -529,11 +529,11 @@ export interface DocumentChangeDescriptor {
      * text that has been removed (if any)
      */
     removed?: string;
-}
+};
 /**
  * describe a list of change in a document
  */
-export interface DocumentChangeRecord {
+export type DocumentChangeRecord = {
     /**
      * path of the files that has changed
      */
@@ -546,7 +546,7 @@ export interface DocumentChangeRecord {
      * documentText
      */
     documentText: string;
-}
+};
 
 
 }
@@ -575,21 +575,51 @@ declare module 'typescript-project-services' {
 import ts = require('typescript');
 import promise = require('typescript-project-services/lib/promise');
 import ProjectManager = require('typescript-project-services/lib/projectManager');
+import fs = require('typescript-project-services/lib/fileSystem');
+import ws = require('typescript-project-services/lib/workingSet');
 import project = require('typescript-project-services/lib/project');
 export type Position = {
     line: number;
     ch: number;
 };
 export function injectPromiseLibrary(lib: typeof promise.Promise): void;
-export function init(config: ProjectManager.ProjectManagerConfig): promise.Promise<void>;
+export import ProjectManagerConfig = ProjectManager.ProjectManagerConfig;
+export import IFileSystem = fs.IFileSystem;
+export import FileChangeRecord = fs.FileChangeRecord;
+export import FileChangeKind = fs.FileChangeKind;
+export import IWorkingSet = ws.IWorkingSet;
+export import DocumentChangeDescriptor = ws.DocumentChangeDescriptor;
+export import DocumentChangeRecord = ws.DocumentChangeRecord;
+export import WorkingSetChangeRecord = ws.WorkingSetChangeRecord;
+export import WorkingSetChangeKind = ws.WorkingSetChangeKind;
+export import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
+/**
+ * Initializate the service
+ *
+ * @param config the config used for the project managed
+ */
+export function init(config: ProjectManagerConfig): promise.Promise<void>;
+/**
+ * Update the configurations of the projects managed by this services.
+ *
+ * @param configs
+ *   A map project name to project config file.
+ *   if a project previously managed by this service is not present in the  map
+ *   the project will be disposed.
+ *   If a new project is present in the map, the project will be initialized
+ *   Otherwise the project will be updated accordingly to the new configuration
+ */
 export function updateProjectConfigs(configs: {
-    [projectId: string]: project.TypeScriptProjectConfig;
+    [projectId: string]: TypeScriptProjectConfig;
 }): promise.Promise<void>;
+/**
+ * dispose the service
+ */
 export function dispose(): void;
 /**
  * Represent definition info of a symbol
  */
-export interface DefinitionInfo {
+export type DefinitionInfo = {
     /**
      * full name of the symbol
      */
@@ -614,52 +644,54 @@ export interface DefinitionInfo {
      * path of the file where the symbol is defined
      */
     fileName: string;
-}
+};
 /**
- * retrieve definition info of a symbol at a given position in a given file
+ * Retrieve definition info of a symbol at a given position in a given file.
+ * return a promise resolving to a list of definition info.
+ *
  * @param fileName the absolute path of the file
  * @param position in the file where you want to retrieve definition info
  *
- * @return a promise resolving to a list of definition info
  */
 export function getDefinitionAtPosition(fileName: string, position: Position): promise.Promise<DefinitionInfo[]>;
-export enum DiagnosticCategory {
+export const enum DiagnosticCategory {
     Warning = 0,
     Error = 1,
     Message = 2,
 }
-export interface TSError {
+export type TSError = {
     pos: Position;
     endPos: Position;
     message: string;
     type: DiagnosticCategory;
-}
+};
 /**
  * Retrieve a list of errors for a given file
- * @param fileName the absolute path of the file
+ * return a promise resolving to a list of errors
  *
- * @return a promise resolving to a list of errors
+ * @param fileName the absolute path of the file
  */
 export function getErrorsForFile(fileName: string): promise.Promise<TSError[]>;
-export interface TextEdit {
+export type TextEdit = {
     start: number;
     end: number;
     newText: string;
-}
+};
 /**
- * Retrieve formating information for a givent file
+ * Retrieve formating information for a givent file.
+ * return a promise resolving to a list of TextEdit
+ *
  * @param fileName the absolute path of the file
  * @param options formation options
  * @param startPos an option start position for the formating range
  * @param endPos an optional end position for the formating range
  *
- * @return a promise resolving to a formating range info
  */
 export function getFormatingForFile(fileName: string, options: ts.FormatCodeOptions, startPos?: Position, endPos?: Position): promise.Promise<TextEdit[]>;
 /**
  * Represent a completion result
  */
-export interface CompletionResult {
+export type CompletionResult = {
     /**
      * the matched string portion
      */
@@ -668,13 +700,16 @@ export interface CompletionResult {
      * list of proposed entries for code completion
      */
     entries: ts.CompletionEntryDetails[];
-}
+};
 /**
- * Retrieve completion proposal at a given point in a given file
+ * Retrieve completion proposal at a given point in a given file.
+ * return a promise resolving to a list of completion proposals.
+ *
  * @param fileName the absolute path of the file
  * @param position in the file where you want to retrieve completion proposal
+ * @param limit the max number of proposition this service shoudl return
+ * @param skip the number of proposition this service should skip
  *
- * @return a promise resolving to a list of proposals
  */
 export function getCompletionAtPosition(fileName: string, position: Position, limit?: number, skip?: number): promise.Promise<CompletionResult>;
 

@@ -64,7 +64,7 @@ export interface IFileSystem {
 /**
  * enum representing the kind change possible in the fileSysem
  */
-export enum FileChangeKind {
+export const enum FileChangeKind {
     /**
      * a file has been added
      */
@@ -89,7 +89,7 @@ export enum FileChangeKind {
 /**
  * FileSystem change descriptor
  */
-export interface FileChangeRecord {
+export type FileChangeRecord = {
     /**
      * kind of change
      */

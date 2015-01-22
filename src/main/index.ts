@@ -101,7 +101,7 @@ export function dispose(): void {
 /**
  * Represent definition info of a symbol
  */
-export interface DefinitionInfo {
+export type DefinitionInfo = {
     /**
      * full name of the symbol
      */
@@ -182,13 +182,13 @@ export function getDefinitionAtPosition(fileName: string, position: Position): p
 //  Definitions
 //--------------------------------------------------------------------------
 
-export enum DiagnosticCategory {
+export const enum DiagnosticCategory {
     Warning,
     Error,
     Message
 }
 
-export interface TSError {
+export type TSError = {
     pos: Position;
     endPos: Position;
     message: string;
@@ -236,7 +236,7 @@ export function getErrorsForFile(fileName: string): promise.Promise<TSError[]> {
 //  definitions
 //--------------------------------------------------------------------------
 
-export interface TextEdit {
+export type TextEdit = {
     start: number;
     end: number;
     newText: string;
@@ -297,7 +297,7 @@ export function getFormatingForFile(fileName: string, options: ts.FormatCodeOpti
 /**
  * Represent a completion result
  */
-export interface CompletionResult {
+export type CompletionResult = {
     /**
      * the matched string portion
      */

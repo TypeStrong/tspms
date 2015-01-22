@@ -40,7 +40,7 @@ import LanguageServiceHost      = require('./languageServiceHost');
 /**
  * Project Configuration
  */
-export interface TypeScriptProjectConfig {
+export type TypeScriptProjectConfig = {
     
     //---------------------------------------------
     //  Brackets-Typescript Specific settings
@@ -144,7 +144,7 @@ export interface TypeScriptProject {
 }
 
 
-export enum ProjectFileKind {
+export const enum ProjectFileKind {
     /**
      * the file is not a part of the project
      */
