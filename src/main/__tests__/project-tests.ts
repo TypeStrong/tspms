@@ -1,3 +1,5 @@
+'use strict';
+
 jest.dontMock('../project');
 jest.dontMock('../utils');
 jest.dontMock('./fileSystemMock');

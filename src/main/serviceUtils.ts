@@ -1,3 +1,5 @@
+'use strict';
+
 import ts = require('typescript');
 import SourceFile = ts.SourceFile;
 import Node = ts.Node

@@ -1,3 +1,5 @@
+'use strict';
+
 import ts = require('typescript');
 import promise = require('./promise');
 import ProjectManager = require('./projectManager');

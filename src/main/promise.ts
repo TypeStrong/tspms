@@ -1,3 +1,5 @@
+'use strict';
+
 //see https://github.com/bramstein/promis/
 
 export interface Thenable<R> {
