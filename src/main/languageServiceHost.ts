@@ -3,6 +3,7 @@
 import ts     = require('typescript');
 import path   = require('path');
 import utils  = require('./utils');
+import console = require('./logger');
 
 
 interface LanguageServiceHost extends ts.LanguageServiceHost {
@@ -271,10 +272,10 @@ module LanguageServiceHost {
         }
 
         return {
-            //ts.Logger implementation
-            log: () => void 0,
-            error: () => void 0,
-            trace: () => void 0,
+            //ts.Logger implementation, actually master implementation instead of 1.4.1
+            log: console.info,
+            error:  console.error,
+            trace: console.info,
 
 
             // LanguageServiceHost implementation

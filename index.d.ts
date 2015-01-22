@@ -151,6 +151,17 @@ export = LanguageServiceHost;
 
 }
 
+declare module 'typescript-project-services/lib/logger' {
+
+export type Logger = (message?: any, ...optionalParams: any[]) => void;
+export var info: (message?: any, ...optionalParams: any[]) => void;
+export var warn: (message?: any, ...optionalParams: any[]) => void;
+export var error: (message?: any, ...optionalParams: any[]) => void;
+export function injectLogger(info: Logger, warn: Logger, error: Logger): void;
+
+
+}
+
 declare module 'typescript-project-services/lib/project' {
 
 import ts = require('typescript');
@@ -578,11 +589,14 @@ import ProjectManager = require('typescript-project-services/lib/projectManager'
 import fs = require('typescript-project-services/lib/fileSystem');
 import ws = require('typescript-project-services/lib/workingSet');
 import project = require('typescript-project-services/lib/project');
+import console = require('typescript-project-services/lib/logger');
 export type Position = {
     line: number;
     ch: number;
 };
-export function injectPromiseLibrary(lib: typeof promise.Promise): void;
+export import Logger = console.Logger;
+export var injectLogger: typeof console.injectLogger;
+export var injectPromiseLibrary: typeof promise.injectPromiseLibrary;
 export import ProjectManagerConfig = ProjectManager.ProjectManagerConfig;
 export import IFileSystem = fs.IFileSystem;
 export import FileChangeRecord = fs.FileChangeRecord;

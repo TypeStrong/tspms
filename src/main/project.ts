@@ -10,7 +10,8 @@ import fs           = require('./fileSystem');
 import ws           = require('./workingSet');
 
 import utils        = require('./utils');
-import PromiseQueue = utils.PromiseQueue
+import PromiseQueue = utils.PromiseQueue;
+import console      = require('./logger');
 
 
 
@@ -523,14 +524,11 @@ export function createProject(
                     return mustUpdate;
                 });
                 if (mustUpdate || languageServiceHost.getScriptContent(record.path) !== record.documentText) {
-                    //TODO
-//                    if (logger.warning()) {
-//                        if (mustUpdate) {
-//                            logger.log('TypeScriptProject: inconsistent change descriptor: ' + JSON.stringify(lastChange));
-//                        } else {
-//                            logger.log('TypeScriptProject: text different before and after change');
-//                        }
-//                    }
+                    if (mustUpdate) {
+                        console.warn('TypeScriptProject: inconsistent change descriptor: %s', JSON.stringify(lastChange, null,  4));
+                    } else {
+                        console.warn('TypeScriptProject: text different before and after change');
+                    }
                     languageServiceHost.updateScript(record.path, record.documentText);
                 }
 

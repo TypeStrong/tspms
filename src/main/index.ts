@@ -6,7 +6,8 @@ import ProjectManager = require('./projectManager');
 import fs = require('./fileSystem');
 import ws = require('./workingSet');
 import project = require('./project');
-import serviceUtils = require('./serviceUtils')
+import serviceUtils = require('./serviceUtils');
+import console = require('./logger');
 
 //--------------------------------------------------------------------------
 //
@@ -18,15 +19,24 @@ export type Position = {
     ch: number;
 }
 
+
+//--------------------------------------------------------------------------
+//
+//  Logger Injection
+//
+//--------------------------------------------------------------------------
+
+export import Logger = console.Logger;
+
+export var injectLogger = console.injectLogger;
+
 //--------------------------------------------------------------------------
 //
 //  Promise Injection
 //
 //--------------------------------------------------------------------------
 
-export function injectPromiseLibrary(lib: typeof promise.Promise) {
-    promise.injectPromiseLibrary(lib);
-}
+export var injectPromiseLibrary = promise.injectPromiseLibrary;
 
 //--------------------------------------------------------------------------
 //
