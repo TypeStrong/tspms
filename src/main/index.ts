@@ -1,43 +1,89 @@
-import ts               = require('typescript');
-import promise          = require('./promise');
-import ProjectManager   = require('./projectManager');
-import fs               = require('./fileSystem');
-import ws               = require('./workingSet');
-import project          = require('./project');
-import serviceUtils     = require('./serviceUtils')
+import ts = require('typescript');
+import promise = require('./promise');
+import ProjectManager = require('./projectManager');
+import fs = require('./fileSystem');
+import ws = require('./workingSet');
+import project = require('./project');
+import serviceUtils = require('./serviceUtils')
 
-
-export type Position = { 
-    line: number; 
-    ch: number; 
+//--------------------------------------------------------------------------
+//
+//  Globally used definition
+//
+//--------------------------------------------------------------------------
+export type Position = {
+    line: number;
+    ch: number;
 }
 
+//--------------------------------------------------------------------------
+//
+//  Promise Injection
+//
+//--------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------
-//
-//  Install Promise
-//
-//--------------------------------------------------------------------------
 export function injectPromiseLibrary(lib: typeof promise.Promise) {
     promise.injectPromiseLibrary(lib);
 }
 
-
-
 //--------------------------------------------------------------------------
 //
-//  Initialization
+//  Project LifeCycle
 //
 //--------------------------------------------------------------------------
 
-export function init(config: ProjectManager.ProjectManagerConfig): promise.Promise<void> {
+//--------------------------------------------------------------------------
+//  Definitions
+//--------------------------------------------------------------------------
+
+export import ProjectManagerConfig = ProjectManager.ProjectManagerConfig;
+
+export import IFileSystem = fs.IFileSystem;
+export import FileChangeRecord = fs.FileChangeRecord;
+export import FileChangeKind = fs.FileChangeKind
+
+export import IWorkingSet = ws.IWorkingSet;
+export import DocumentChangeDescriptor = ws.DocumentChangeDescriptor;
+export import DocumentChangeRecord = ws.DocumentChangeRecord;
+export import WorkingSetChangeRecord = ws.WorkingSetChangeRecord;
+export import WorkingSetChangeKind = ws.WorkingSetChangeKind;
+
+export import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
+
+//--------------------------------------------------------------------------
+//  init
+//--------------------------------------------------------------------------
+
+/**
+ * Initializate the service
+ * 
+ * @param config the config used for the project managed
+ */
+export function init(config: ProjectManagerConfig): promise.Promise<void> {
     return ProjectManager.init(config);
 }
 
-export function updateProjectConfigs(configs:  { [projectId: string]: project.TypeScriptProjectConfig; }): promise.Promise<void> {
+//--------------------------------------------------------------------------
+//  updateProjectConfigs
+//--------------------------------------------------------------------------
+
+/**
+ * Update the configurations of the projects managed by this services.
+ * 
+ * @param configs 
+ *   A map project name to project config file.
+ *   if a project previously managed by this service is not present in the  map
+ *   the project will be disposed. 
+ *   If a new project is present in the map, the project will be initialized
+ *   Otherwise the project will be updated accordingly to the new configuration
+ */
+export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }): promise.Promise<void> {
     return ProjectManager.updateProjectConfigs(configs);
 }
 
+/**
+ * dispose the service
+ */
 export function dispose(): void {
     ProjectManager.dispose();
 }
@@ -48,6 +94,9 @@ export function dispose(): void {
 //
 //--------------------------------------------------------------------------
 
+//--------------------------------------------------------------------------
+//  Definitions
+//--------------------------------------------------------------------------
 
 /**
  * Represent definition info of a symbol
@@ -85,38 +134,42 @@ export interface DefinitionInfo {
 }
 
 
+//--------------------------------------------------------------------------
+//  getDefinitionAtPosition
+//--------------------------------------------------------------------------
 
 /**
- * retrieve definition info of a symbol at a given position in a given file
+ * Retrieve definition info of a symbol at a given position in a given file.
+ * return a promise resolving to a list of definition info.
+ * 
  * @param fileName the absolute path of the file 
  * @param position in the file where you want to retrieve definition info
  * 
- * @return a promise resolving to a list of definition info
  */
 
-export function getDefinitionAtPosition(fileName: string, position: Position ): promise.Promise<DefinitionInfo[]> {
+export function getDefinitionAtPosition(fileName: string, position: Position): promise.Promise<DefinitionInfo[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService(),
             languageServiceHost = project.getLanguageServiceHost(),
             index = languageServiceHost.getIndexFromPosition(fileName, position);
-        
+
         if (index < 0) {
             return [];
         }
-        
+
         return languageService.getDefinitionAtPosition(fileName, index).map(definition => {
             var startPos = languageServiceHost.getPositionFromIndex(definition.fileName, definition.textSpan.start()),
                 endPos = languageServiceHost.getPositionFromIndex(definition.fileName, definition.textSpan.end());
             return {
                 name: (definition.containerName ? (definition.containerName + '.') : '') + definition.name,
-                lineStart : startPos.line,
-                charStart : startPos.ch,
-                lineEnd : endPos.line,
-                charEnd : endPos.ch,
+                lineStart: startPos.line,
+                charStart: startPos.ch,
+                lineEnd: endPos.line,
+                charEnd: endPos.ch,
                 fileName: definition.fileName
             };
         });
-    }).catch((): DefinitionInfo[]  => []);
+    }).catch((): DefinitionInfo[]=> []);
 }
 
 //--------------------------------------------------------------------------
@@ -125,10 +178,14 @@ export function getDefinitionAtPosition(fileName: string, position: Position ): 
 //
 //--------------------------------------------------------------------------
 
+//--------------------------------------------------------------------------
+//  Definitions
+//--------------------------------------------------------------------------
+
 export enum DiagnosticCategory {
-    Warning = 0,
-    Error = 1,
-    Message = 2
+    Warning,
+    Error,
+    Message
 }
 
 export interface TSError {
@@ -138,12 +195,15 @@ export interface TSError {
     type: DiagnosticCategory;
 }
 
+//--------------------------------------------------------------------------
+//  getErrorsForFile
+//--------------------------------------------------------------------------
 
 /**
  * Retrieve a list of errors for a given file
- * @param fileName the absolute path of the file 
+ * return a promise resolving to a list of errors
  * 
- * @return a promise resolving to a list of errors
+ * @param fileName the absolute path of the file 
  */
 export function getErrorsForFile(fileName: string): promise.Promise<TSError[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
@@ -158,11 +218,11 @@ export function getErrorsForFile(fileName: string): promise.Promise<TSError[]> {
         return diagnostics.map(diagnostic => ({
             pos: languageServiceHost.getPositionFromIndex(fileName, diagnostic.start),
             endPos: languageServiceHost.getPositionFromIndex(fileName, diagnostic.length + diagnostic.start),
-            message: diagnostic.messageText, 
+            message: diagnostic.messageText,
             type: diagnostic.category
         }));
-        
-    }).catch((): TSError[] => []);
+
+    }).catch((): TSError[]=> []);
 }
 
 
@@ -172,6 +232,9 @@ export function getErrorsForFile(fileName: string): promise.Promise<TSError[]> {
 //
 //--------------------------------------------------------------------------
 
+//--------------------------------------------------------------------------
+//  definitions
+//--------------------------------------------------------------------------
 
 export interface TextEdit {
     start: number;
@@ -179,14 +242,19 @@ export interface TextEdit {
     newText: string;
 }
 
+//--------------------------------------------------------------------------
+//  getFormatingForFile
+//--------------------------------------------------------------------------
+
 /**
- * Retrieve formating information for a givent file
+ * Retrieve formating information for a givent file.
+ * return a promise resolving to a list of TextEdit
+ * 
  * @param fileName the absolute path of the file 
  * @param options formation options
  * @param startPos an option start position for the formating range
  * @param endPos an optional end position for the formating range
  * 
- * @return a promise resolving to a formating range info
  */
 export function getFormatingForFile(fileName: string, options: ts.FormatCodeOptions, startPos?: Position, endPos?: Position): promise.Promise<TextEdit[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
@@ -195,7 +263,7 @@ export function getFormatingForFile(fileName: string, options: ts.FormatCodeOpti
             languageService = project.getLanguageService(),
             minChar: number, limChar: number;
 
-        if (!startPos || ! endPos) {
+        if (!startPos || !endPos) {
             minChar = 0;
             limChar = project.getLanguageServiceHost().getScriptContent(fileName).length - 1;
         } else {
@@ -222,6 +290,10 @@ export function getFormatingForFile(fileName: string, options: ts.FormatCodeOpti
 //
 //--------------------------------------------------------------------------
 
+//--------------------------------------------------------------------------
+//  definitions
+//--------------------------------------------------------------------------
+
 /**
  * Represent a completion result
  */
@@ -234,18 +306,24 @@ export interface CompletionResult {
     /**
      * list of proposed entries for code completion
      */
-    entries: ts.CompletionEntryDetails[]; 
+    entries: ts.CompletionEntryDetails[];
 }
 
 
 
+//--------------------------------------------------------------------------
+//  getCompletionAtPosition
+//--------------------------------------------------------------------------
 
 /**
- * Retrieve completion proposal at a given point in a given file
+ * Retrieve completion proposal at a given point in a given file.
+ * return a promise resolving to a list of completion proposals.
+ * 
  * @param fileName the absolute path of the file 
  * @param position in the file where you want to retrieve completion proposal
+ * @param limit the max number of proposition this service shoudl return
+ * @param skip the number of proposition this service should skip
  * 
- * @return a promise resolving to a list of proposals
  */
 export function getCompletionAtPosition(fileName: string, position: Position, limit = 50, skip = 0): promise.Promise<CompletionResult> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
@@ -262,12 +340,12 @@ export function getCompletionAtPosition(fileName: string, position: Position, li
         }
 
         var match: string;
-        
+
         var sourceFile = languageService.getSourceFile(fileName);
         var typeScript = project.getTypeScriptInfo().typeScript;
         var word = serviceUtils.getTouchingWord(sourceFile, index, typeScript);
-        
-        
+
+
         if (word && serviceUtils.isWord(word.kind, typeScript)) {
             match = word.getText();
             typeScriptEntries = typeScriptEntries.filter(entry => {
@@ -278,44 +356,35 @@ export function getCompletionAtPosition(fileName: string, position: Position, li
 
 
         var completionEntries = typeScriptEntries
-        .sort((entry1, entry2) => {
-            var match1 = entry1 ? entry1.name.indexOf(match) : -1,
-                match2 = entry2 ? entry2.name.indexOf(match) : -1;
-            if (match1 === 0 && match2 !== 0) {
-                return -1;
-            } else if (match2 === 0 && match1 !== 0) {
-                return 1;
-            } else {
-                var name1 = entry1 && entry1.name.toLowerCase(),
-                    name2 = entry2 && entry2.name.toLowerCase();
-
-                if (name1 < name2) {
+            .sort((entry1, entry2) => {
+                var match1 = entry1 ? entry1.name.indexOf(match) : -1,
+                    match2 = entry2 ? entry2.name.indexOf(match) : -1;
+                if (match1 === 0 && match2 !== 0) {
                     return -1;
-                } else if (name1 > name2) {
+                } else if (match2 === 0 && match1 !== 0) {
                     return 1;
                 } else {
-                    return 0;
+                    var name1 = entry1 && entry1.name.toLowerCase(),
+                        name2 = entry2 && entry2.name.toLowerCase();
+
+                    if (name1 < name2) {
+                        return -1;
+                    } else if (name1 > name2) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
                 }
-            }
-        })
-        .slice(skip, limit + skip)
-        .map(typeScriptEntry => languageService.getCompletionEntryDetails(fileName, index, typeScriptEntry.name));
+            })
+            .slice(skip, limit + skip)
+            .map(typeScriptEntry => languageService.getCompletionEntryDetails(fileName, index, typeScriptEntry.name));
 
         return {
             entries: completionEntries,
-            match : match
+            match: match
         };
     }).catch((): CompletionResult => ({
         entries: [],
-        match : ''
+        match: ''
     }));
 }
-
-//TODO
-///**
-// * helper method return true if the token correspond to an 'completable' token
-// */
-//function isValidTokenKind(tokenKind: number) {
-//    return tokenKind === TypeScript.SyntaxKind.IdentifierName ||
-//        (tokenKind >= TypeScript.SyntaxKind.BreakKeyword && tokenKind < TypeScript.SyntaxKind.OpenBraceToken); 
-//}
