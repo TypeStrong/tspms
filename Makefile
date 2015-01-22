@@ -1,5 +1,5 @@
 CC=node node_modules/.bin/tsc
-FLAGS=--module commonjs --noImplicitAny --target ES5
+FLAGS=--module commonjs --noImplicitAny --target ES5 --preserveConstEnums
 
 JEST=node node_modules/.bin/jest 
 
