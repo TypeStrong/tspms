@@ -726,6 +726,26 @@ export type CompletionResult = {
  *
  */
 export function getCompletionAtPosition(fileName: string, position: Position, limit?: number, skip?: number): promise.Promise<CompletionResult>;
+export type NavigationBarItem = {
+    text: string;
+    kind: string;
+    kindModifiers: string;
+    positions: {
+        start: number;
+        end: number;
+    }[];
+    childItems: NavigationBarItem[];
+    indent: number;
+    bolded: boolean;
+    grayed: boolean;
+};
+/**
+ * Retrieve NavigationBarItems
+ *
+ * @param fileName the absolute path of the file
+ *
+ */
+export function getNavigationBarItems(fileName: string): promise.Promise<NavigationBarItem[]>;
 
 
 }

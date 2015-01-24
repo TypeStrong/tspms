@@ -400,3 +400,49 @@ export function getCompletionAtPosition(fileName: string, position: Position, li
         match: ''
     }));
 }
+
+
+
+//--------------------------------------------------------------------------
+//  NagivationBar
+//--------------------------------------------------------------------------
+
+export type NavigationBarItem = {
+    text: string;
+    kind: string;
+    kindModifiers: string;
+    positions: { start: number; end: number }[];
+    childItems: NavigationBarItem[];
+    indent: number;
+    bolded: boolean;
+    grayed: boolean;
+}
+
+function tsNavigationBarItemToNavigationBarItem(item: ts.NavigationBarItem) : NavigationBarItem {
+    return {
+        text: item.text,
+        kind: item.kind,
+        kindModifiers: item.kindModifiers,
+        indent: item.indent,
+        bolded: item.bolded,
+        grayed: item.grayed,
+        positions: item.spans && item.spans.map(span => ({ 
+            start: span.start(), 
+            end: span.start() + span.end()
+        })),
+        childItems: item.childItems && item.childItems.map(tsNavigationBarItemToNavigationBarItem)
+    }
+}
+
+/**
+ * Retrieve NavigationBarItems
+ * 
+ * @param fileName the absolute path of the file 
+ * 
+ */
+export function getNavigationBarItems(fileName: string): promise.Promise<NavigationBarItem[]> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        return languageService.getNavigationBarItems(fileName).map(tsNavigationBarItemToNavigationBarItem);
+    });
+}
