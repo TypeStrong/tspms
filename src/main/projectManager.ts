@@ -6,6 +6,7 @@ import path = require('path');
 
 import fs   = require('./fileSystem');
 import ws = require('./workingSet');
+import ts = require('typescript');
 
 import project = require('./project');
 import ProjectFileKind = project.ProjectFileKind;
@@ -88,7 +89,7 @@ var defaultTypeScriptLocation: string;
 
 var projectConfigs: { [projectId: string]: TypeScriptProjectConfig; };
 
-
+var documentRegistry = ts.createDocumentRegistry();
 
 //-------------------------------
 //  Private 
@@ -128,6 +129,7 @@ function disposeProjects(): void {
  */
 function createProjectFromConfig(projectId: string, config: TypeScriptProjectConfig) {
     var project = createProject(
+        documentRegistry,
         projectRootDir,
         config,
         fileSystem,
@@ -222,6 +224,7 @@ export function getProjectForFile(fileName: string): promise.Promise<TypeScriptP
             config.module = 'commonjs';
             config.sources = [fileName];
             tempProject = project = createProject(
+                documentRegistry,
                 projectRootDir,
                 config,
                 fileSystem,

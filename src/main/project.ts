@@ -155,6 +155,7 @@ export type TypeScriptInfo = {
 }
 
 export function createProject(
+    documentRegistry: ts.DocumentRegistry,
     baseDirectory: string, 
     config: TypeScriptProjectConfig, 
     fileSystem: fs.IFileSystem, 
@@ -555,7 +556,7 @@ export function createProject(
         libLocation = typeScriptInfo.libLocation;
         languageServiceHost = LanguageServiceHost.create(baseDirectory, libLocation);
         languageServiceHost.setCompilationSettings(createCompilationSettings());
-        languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, typeScriptInfo.typeScript.createDocumentRegistry());
+        languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, documentRegistry);
     
         return queue.init(collectFiles().then(updateWorkingSet));
     }

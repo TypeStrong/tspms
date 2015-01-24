@@ -258,7 +258,7 @@ export type TypeScriptInfo = {
     typeScript: typeof ts;
     libLocation: string;
 };
-export function createProject(baseDirectory: string, config: TypeScriptProjectConfig, fileSystem: fs.IFileSystem, workingSet: ws.IWorkingSet, defaultLibLocation: string): TypeScriptProject;
+export function createProject(documentRegistry: ts.DocumentRegistry, baseDirectory: string, config: TypeScriptProjectConfig, fileSystem: fs.IFileSystem, workingSet: ws.IWorkingSet, defaultLibLocation: string): TypeScriptProject;
 
 
 }

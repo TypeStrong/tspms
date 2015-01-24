@@ -25,7 +25,9 @@ describe('project test', function () {
 
     var defaultLibLocation = '/lib.d.ts';
     function createProject(baseDir: string, config: TypeScriptProjectConfig, init = true) {
+        var registry = ts.createDocumentRegistry();
         typeScriptProject = project.createProject(
+            registry,
             baseDir,
             utils.assign({}, utils.typeScriptProjectConfigDefault, config),
             fileSystemMock,
