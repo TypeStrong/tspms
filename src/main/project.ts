@@ -567,8 +567,10 @@ export function createProject(
     function update(config: TypeScriptProjectConfig): promise.Promise<void> {
         
         if (config.typescriptPath !== _config.typescriptPath) {
+            languageService.dispose();
             return init();
         }
+        languageService.cleanupSemanticCache();
         
         if (!_config.noLib && config.noLib) {
             removeFile(libLocation);
@@ -598,6 +600,7 @@ export function createProject(
         workingSet.workingSetChanged.remove(workingSetChangedHandler);
         workingSet.documentEdited.remove(documentEditedHandler);
         fileSystem.projectFilesChanged.remove(filesChangeHandler);
+        languageService.dispose();
     }
     
 
