@@ -17,23 +17,11 @@
     "grunt-contrib-clean": "^0.6.0",
     "grunt-exec": "^0.4.6",
     "grunt-typescript": "^0.6.1",
-    "jest-cli": "git://github.com/hankhsiao/jest",
+    "jest-cli": "^0.2.1",
     "minimist": "^1.1.0",
     "promises-aplus-tests": "*"
   },
   "jest": {
-    "coverageFormats": ["json", "html"],
-    "collectCoverageOnlyFrom": {
-        "built/fileSystem.js": true,
-        "built/index.js": true,
-        "built/languageServiceHost.js": true,
-        "built/logger.js": true,
-        "built/project.js": true,
-        "built/projectManager.js": true,
-        "built/serviceUtils.js": true,
-        "built/utils.js": true,
-        "built/workingSet.js": true
-    },
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules/",
       "<rootDir>/built/promise.js",
