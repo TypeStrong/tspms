@@ -9,16 +9,6 @@ import project = require('./project');
 import serviceUtils = require('./serviceUtils');
 import console = require('./logger');
 
-//--------------------------------------------------------------------------
-//
-//  Globally used definition
-//
-//--------------------------------------------------------------------------
-export type Position = {
-    line: number;
-    ch: number;
-}
-
 
 //--------------------------------------------------------------------------
 //
@@ -102,213 +92,78 @@ export function dispose(): void {
 
 //--------------------------------------------------------------------------
 //
-//  Definition Service
+//  Services
 //
 //--------------------------------------------------------------------------
 
+
 //--------------------------------------------------------------------------
-//  Definitions
+//  Globally used definition
+//--------------------------------------------------------------------------
+export type TextSpan = {
+    start: number;
+    length: number;
+}
+
+function tsSpanToTextSpan(span : ts.TextSpan): TextSpan {
+    return {
+        start: span.start(),
+        length: span.length()
+    }
+}
+
+
+//--------------------------------------------------------------------------
+//  getDiagnosticsForFile
 //--------------------------------------------------------------------------
 
-/**
- * Represent definition info of a symbol
- */
-export type DefinitionInfo = {
-    /**
-     * full name of the symbol
-     */
-    name: string;
-    
-    /**
-     * line at which the symbol definition start
-     */
-    lineStart: number;
-    
-    /**
-     * charachter at which the symbol definition start
-     */
-    charStart: number;
-    
-    /**
-     * line at which the symbol definition end
-     */
-    lineEnd: number;
-    
-    /**
-     * charachter at which the symbol definition end
-     */
-    charEnd: number;
-    
-    /**
-     * path of the file where the symbol is defined
-     */
+export type Diagnostics = {
     fileName: string;
+    start: number;
+    length: number;
+    messageText: string;
+    category: ts.DiagnosticCategory;
+    code: number;
 }
-
-
-//--------------------------------------------------------------------------
-//  getDefinitionAtPosition
-//--------------------------------------------------------------------------
-
-/**
- * Retrieve definition info of a symbol at a given position in a given file.
- * return a promise resolving to a list of definition info.
- * 
- * @param fileName the absolute path of the file 
- * @param position in the file where you want to retrieve definition info
- * 
- */
-
-export function getDefinitionAtPosition(fileName: string, position: Position): promise.Promise<DefinitionInfo[]> {
-    return ProjectManager.getProjectForFile(fileName).then(project => {
-        var languageService = project.getLanguageService(),
-            languageServiceHost = project.getLanguageServiceHost(),
-            index = languageServiceHost.getIndexFromPosition(fileName, position);
-
-        if (index < 0) {
-            return [];
-        }
-
-        return languageService.getDefinitionAtPosition(fileName, index).map(definition => {
-            var startPos = languageServiceHost.getPositionFromIndex(definition.fileName, definition.textSpan.start()),
-                endPos = languageServiceHost.getPositionFromIndex(definition.fileName, definition.textSpan.end());
-            return {
-                name: (definition.containerName ? (definition.containerName + '.') : '') + definition.name,
-                lineStart: startPos.line,
-                charStart: startPos.ch,
-                lineEnd: endPos.line,
-                charEnd: endPos.ch,
-                fileName: definition.fileName
-            };
-        });
-    }).catch((): DefinitionInfo[]=> []);
-}
-
-//--------------------------------------------------------------------------
-//
-//  Error service
-//
-//--------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------
-//  Definitions
-//--------------------------------------------------------------------------
-
-export const enum DiagnosticCategory {
-    Warning,
-    Error,
-    Message
-}
-
-export type TSError = {
-    pos: Position;
-    endPos: Position;
-    message: string;
-    type: DiagnosticCategory;
-}
-
-//--------------------------------------------------------------------------
-//  getErrorsForFile
-//--------------------------------------------------------------------------
 
 /**
  * Retrieve a list of errors for a given file
  * return a promise resolving to a list of errors
  * 
  * @param fileName the absolute path of the file 
+ * @param allErrors by default errors are checked in 3 phases, options check, syntax check, 
+ *   semantic check, is allErrors is set to false, the service won't check the nex phase 
+ *   if there is error in the precedent one
  */
-export function getErrorsForFile(fileName: string): promise.Promise<TSError[]> {
+export function getDiagnosticsForFile(fileName: string, allErrors = false): promise.Promise<Diagnostics[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
-        var languageService = project.getLanguageService(),
-            languageServiceHost = project.getLanguageServiceHost(),
+        var languageService = project.getLanguageService();
+        var diagnostics = languageService.getCompilerOptionsDiagnostics();
+        
+        if (diagnostics.length === 0 || allErrors) {
             diagnostics = languageService.getSyntacticDiagnostics(fileName);
+        }
 
-        if (diagnostics.length === 0) {
+        if (diagnostics.length === 0 || allErrors) {
             diagnostics = languageService.getSemanticDiagnostics(fileName);
         }
-
+        
         return diagnostics.map(diagnostic => ({
-            pos: languageServiceHost.getPositionFromIndex(fileName, diagnostic.start),
-            endPos: languageServiceHost.getPositionFromIndex(fileName, diagnostic.length + diagnostic.start),
-            message: diagnostic.messageText,
-            type: diagnostic.category
+            fileName: fileName,
+            start: diagnostic.start,
+            length: diagnostic.length,
+            messageText: diagnostic.messageText,
+            category: diagnostic.category,
+            code: diagnostic.code
         }));
-
-    }).catch((): TSError[]=> []);
-}
-
-
-//--------------------------------------------------------------------------
-//
-//  Formatting service
-//
-//--------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------
-//  definitions
-//--------------------------------------------------------------------------
-
-export type TextEdit = {
-    start: number;
-    end: number;
-    newText: string;
-}
-
-//--------------------------------------------------------------------------
-//  getFormatingForFile
-//--------------------------------------------------------------------------
-
-/**
- * Retrieve formating information for a givent file.
- * return a promise resolving to a list of TextEdit
- * 
- * @param fileName the absolute path of the file 
- * @param options formation options
- * @param startPos an option start position for the formating range
- * @param endPos an optional end position for the formating range
- * 
- */
-export function getFormatingForFile(fileName: string, options: ts.FormatCodeOptions, startPos?: Position, endPos?: Position): promise.Promise<TextEdit[]> {
-    return ProjectManager.getProjectForFile(fileName).then(project => {
-
-        var languageServiceHost = project.getLanguageServiceHost(),
-            languageService = project.getLanguageService(),
-            minChar: number, limChar: number;
-
-        if (!startPos || !endPos) {
-            minChar = 0;
-            limChar = project.getLanguageServiceHost().getScriptContent(fileName).length - 1;
-        } else {
-            minChar = languageServiceHost.getIndexFromPosition(fileName, startPos);
-            limChar = languageServiceHost.getIndexFromPosition(fileName, endPos);
-        }
-        var result = languageService.getFormattingEditsForRange(fileName, minChar, limChar, options).map(textChange  => ({
-            start: textChange.span.start(),
-            end: textChange.span.end(),
-            newText: textChange.newText
-        }));
-
-        return result && result.reverse();
     });
 }
 
 
-
-
-
 //--------------------------------------------------------------------------
-//
-//  Completion service
-//
+//  getCompletionAtPosition
 //--------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------
-//  definitions
-//--------------------------------------------------------------------------
-
-/**
- * Represent a completion result
- */
 export type CompletionResult = {
     /**
      * the matched string portion
@@ -322,11 +177,6 @@ export type CompletionResult = {
 }
 
 
-
-//--------------------------------------------------------------------------
-//  getCompletionAtPosition
-//--------------------------------------------------------------------------
-
 /**
  * Retrieve completion proposal at a given point in a given file.
  * return a promise resolving to a list of completion proposals.
@@ -337,13 +187,11 @@ export type CompletionResult = {
  * @param skip the number of proposition this service should skip
  * 
  */
-export function getCompletionAtPosition(fileName: string, position: Position, limit = 50, skip = 0): promise.Promise<CompletionResult> {
+export function getCompletionAtPosition(fileName: string, position: number, limit = 50, skip = 0): promise.Promise<CompletionResult> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
 
         var languageService = project.getLanguageService(),
-            languageServiceHost = project.getLanguageServiceHost(),
-            index = languageServiceHost.getIndexFromPosition(fileName, position),
-            completionInfo = languageService.getCompletionsAtPosition(fileName, index),
+            completionInfo = languageService.getCompletionsAtPosition(fileName, position),
             typeScriptEntries = completionInfo && completionInfo.entries;
 
 
@@ -355,7 +203,7 @@ export function getCompletionAtPosition(fileName: string, position: Position, li
 
         var sourceFile = languageService.getSourceFile(fileName);
         var typeScript = project.getTypeScriptInfo().typeScript;
-        var word = serviceUtils.getTouchingWord(sourceFile, index, typeScript);
+        var word = serviceUtils.getTouchingWord(sourceFile, position, typeScript);
 
 
         if (word && serviceUtils.isWord(word.kind, typeScript)) {
@@ -389,29 +237,235 @@ export function getCompletionAtPosition(fileName: string, position: Position, li
                 }
             })
             .slice(skip, limit + skip)
-            .map(typeScriptEntry => languageService.getCompletionEntryDetails(fileName, index, typeScriptEntry.name));
+            .map(typeScriptEntry => languageService.getCompletionEntryDetails(fileName, position, typeScriptEntry.name));
 
         return {
             entries: completionEntries,
             match: match
         };
-    }).catch((): CompletionResult => ({
-        entries: [],
-        match: ''
-    }));
+    });
 }
 
 
+//--------------------------------------------------------------------------
+//  getQuickInfoAtPosition
+//--------------------------------------------------------------------------
+
+
+export type QuickInfo = {
+    kind: string;
+    kindModifiers: string;
+    textSpan: TextSpan;
+    displayParts: ts.SymbolDisplayPart[];
+    documentation: ts.SymbolDisplayPart[];
+}
+
+
+export function getQuickInfoAtPosition(fileName:string, position: number): promise.Promise<QuickInfo> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        var info = languageService.getQuickInfoAtPosition(fileName, position)
+        return {
+            kind: info.kind,
+            kindModifiers: info.kindModifiers,
+            textSpan: tsSpanToTextSpan(info.textSpan),
+            displayParts: info.displayParts,
+            documentation: info.documentation
+        }
+    });
+}
+
 
 //--------------------------------------------------------------------------
-//  NagivationBar
+//  getSignatureHelpItems
+//--------------------------------------------------------------------------
+
+export type SignatureHelpItems = {
+    items: ts.SignatureHelpItem[];
+    applicableSpan: TextSpan;
+    selectedItemIndex: number;
+    argumentIndex: number;
+    argumentCount: number;
+}
+
+
+export function getSignatureHelpItems(fileName:string, position: number): promise.Promise<SignatureHelpItems> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        var signature = languageService.getSignatureHelpItems(fileName, position)
+        return {
+            items: signature.items,
+            applicableSpan: tsSpanToTextSpan(signature.applicableSpan),
+            selectedItemIndex: signature.selectedItemIndex,
+            argumentIndex: signature.argumentIndex,
+            argumentCount: signature.argumentCount
+        }
+    });
+}
+
+//--------------------------------------------------------------------------
+//  getRenameInfo
+//--------------------------------------------------------------------------
+
+export type RenameInfo = {
+    canRename: boolean;
+    localizedErrorMessage: string;
+    displayName: string;
+    fullDisplayName: string;
+    kind: string;
+    kindModifiers: string;
+    triggerSpan: TextSpan;
+}
+
+export function getRenameInfo(fileName:string, position: number): promise.Promise<RenameInfo> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        var info = languageService.getRenameInfo(fileName, position)
+        return {
+            canRename: info.canRename,
+            localizedErrorMessage: info.localizedErrorMessage,
+            displayName: info.displayName,
+            fullDisplayName: info.fullDisplayName,
+            kind: info.kind,
+            kindModifiers: info.kindModifiers,
+            triggerSpan: tsSpanToTextSpan(info.triggerSpan)
+        }
+    });
+}
+
+
+//--------------------------------------------------------------------------
+//  getRenameInfo
+//--------------------------------------------------------------------------
+
+
+export function findRenameLocations(
+        fileName:string, position: number, 
+        findInStrings: boolean, findInComments: boolean
+    ): promise.Promise<{ textSpan: TextSpan; fileName: string;}[]> {
+    
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        return languageService.findRenameLocations(fileName, position, findInStrings, findInComments)
+            .map(location => ({
+                textSpan: tsSpanToTextSpan(location.textSpan),
+                fileName: location.fileName
+            }));
+    });
+}
+
+//--------------------------------------------------------------------------
+//  getDefinitionAtPosition
+//--------------------------------------------------------------------------
+
+export type DefinitionInfo = {
+    fileName: string;
+    textSpan: TextSpan;
+    kind: string;
+    name: string;
+    containerKind: string;
+    containerName: string;
+}
+
+export function getDefinitionAtPosition(fileName: string, position: number): promise.Promise<DefinitionInfo[]> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        return languageService.getDefinitionAtPosition(fileName, position)
+            .map(def => ({
+                fileName: def.fileName,
+                textSpan: tsSpanToTextSpan(def.textSpan),
+                kind: def.kind,
+                name: def.name,
+                containerKind: def.containerKind,
+                containerName: def.containerName
+            }))
+    });
+}
+
+//--------------------------------------------------------------------------
+//  getReferencesAtPosition
+//--------------------------------------------------------------------------
+
+export type ReferenceEntry = {
+    textSpan: TextSpan;
+    fileName: string;
+    isWriteAccess: boolean;
+}
+
+export function getReferencesAtPosition(fileName: string, position: number): promise.Promise<ReferenceEntry[]> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        return languageService.getReferencesAtPosition(fileName, position)
+            .map(ref => ({
+                fileName: ref.fileName,
+                textSpan: tsSpanToTextSpan(ref.textSpan),
+                isWriteAccess: ref.isWriteAccess
+            }))
+    });
+}
+
+
+//--------------------------------------------------------------------------
+//  getOccurrencesAtPosition
+//--------------------------------------------------------------------------
+
+export function getOccurrencesAtPosition(fileName: string, position: number): promise.Promise<ReferenceEntry[]> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        return languageService.getOccurrencesAtPosition(fileName, position)
+            .map(ref => ({
+                fileName: ref.fileName,
+                textSpan: tsSpanToTextSpan(ref.textSpan),
+                isWriteAccess: ref.isWriteAccess
+            }))
+    });
+}
+
+
+//--------------------------------------------------------------------------
+//  getNavigateToItems
+//--------------------------------------------------------------------------
+
+
+export type NavigateToItem = {
+    name: string;
+    kind: string;
+    kindModifiers: string;
+    matchKind: string;
+    fileName: string;
+    textSpan: TextSpan;
+    containerName: string;
+    containerKind: string;
+}
+
+
+export function getNavigateToItems(fileName:string, search: string): promise.Promise<NavigateToItem[]> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        return languageService.getNavigateToItems(search)
+            .map(item => ({
+                name: item.name,
+                kind: item.kind,
+                kindModifiers: item.kindModifiers,
+                matchKind: item.matchKind,
+                fileName: item.fileName,
+                textSpan: tsSpanToTextSpan(item.textSpan),
+                containerName: item.containerName,
+                containerKind: item.containerKind
+            }))
+    });
+}
+
+
+//--------------------------------------------------------------------------
+//  getNavigationBarItems
 //--------------------------------------------------------------------------
 
 export type NavigationBarItem = {
     text: string;
     kind: string;
     kindModifiers: string;
-    positions: { start: number; end: number }[];
+    spans: { start: number; length: number }[];
     childItems: NavigationBarItem[];
     indent: number;
     bolded: boolean;
@@ -426,23 +480,60 @@ function tsNavigationBarItemToNavigationBarItem(item: ts.NavigationBarItem) : Na
         indent: item.indent,
         bolded: item.bolded,
         grayed: item.grayed,
-        positions: item.spans && item.spans.map(span => ({ 
-            start: span.start(), 
-            end: span.start() + span.end()
-        })),
+        spans: item.spans && item.spans.map(tsSpanToTextSpan),
         childItems: item.childItems && item.childItems.map(tsNavigationBarItemToNavigationBarItem)
     }
 }
 
-/**
- * Retrieve NavigationBarItems
- * 
- * @param fileName the absolute path of the file 
- * 
- */
 export function getNavigationBarItems(fileName: string): promise.Promise<NavigationBarItem[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
         return languageService.getNavigationBarItems(fileName).map(tsNavigationBarItemToNavigationBarItem);
     });
 }
+
+
+//--------------------------------------------------------------------------
+//  getFormattingEditsForRange
+//--------------------------------------------------------------------------
+
+
+export type TextChange = {
+    span: TextSpan;
+    newText: string;
+}
+
+export function getFormattingEditsForFile(fileName: string, options: ts.FormatCodeOptions, start: number, end: number): promise.Promise<TextChange[]> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        if(typeof start === 'number' && typeof end === 'number') {
+            return languageService.getFormattingEditsForRange(fileName, start, end, options)
+                .map(edit =>({
+                    span: tsSpanToTextSpan(edit.span),
+                    newText: edit.newText
+                }))
+        } else {
+            return languageService.getFormattingEditsForDocument(fileName,  options)
+                .map(edit =>({
+                    span: tsSpanToTextSpan(edit.span),
+                    newText: edit.newText
+                }))
+        }
+        
+    });
+}
+
+
+//--------------------------------------------------------------------------
+//  getEmitOutput
+//--------------------------------------------------------------------------
+
+
+export function getEmitOutput(fileName: string): promise.Promise<ts.EmitOutput> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        return languageService.getEmitOutput(fileName)
+    });
+}
+
+
