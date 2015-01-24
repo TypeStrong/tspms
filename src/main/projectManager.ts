@@ -15,7 +15,6 @@ import createProject = project.createProject;
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 
 import utils = require('./utils');
-import PromiseQueue = utils.PromiseQueue;
 import console      = require('./logger');
 
 
@@ -79,7 +78,7 @@ var projectRootDir: string;
 /**
  * a promise queue used to insure async task are run sequentialy
  */
-var queue: PromiseQueue;
+var queue = utils.createPromiseQueue();
 
 /**
  * location of the default typescript compiler lib.d.ts file
@@ -161,9 +160,8 @@ export function init(config: ProjectManagerConfig): promise.Promise<void> {
     fileSystem = config.fileSystem;
     projectConfigs = config.projectConfigs;
 
-    queue = new PromiseQueue();
-
-    return queue.init(fileSystem.getProjectRoot().then(rootDir => {
+    
+    return queue.reset(fileSystem.getProjectRoot().then(rootDir => {
         projectRootDir = rootDir;
         return createProjects();
     }));

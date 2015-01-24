@@ -10,7 +10,6 @@ import fs           = require('./fileSystem');
 import ws           = require('./workingSet');
 
 import utils        = require('./utils');
-import PromiseQueue = utils.PromiseQueue;
 import console      = require('./logger');
 
 
@@ -195,7 +194,7 @@ export function createProject(
     /**
      * a promise queue used to run in sequence file based operation
      */
-    var queue: PromiseQueue = new PromiseQueue();
+    var queue = utils.createPromiseQueue()
     
     /**
      * location of the typescript 'lib.d.ts' file
@@ -558,7 +557,7 @@ export function createProject(
         languageServiceHost.setCompilationSettings(createCompilationSettings());
         languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, documentRegistry);
     
-        return queue.init(collectFiles().then(updateWorkingSet));
+        return queue.reset(collectFiles().then(updateWorkingSet));
     }
     
     /**

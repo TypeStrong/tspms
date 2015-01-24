@@ -359,38 +359,12 @@ declare module 'typescript-project-services/lib/utils' {
 import promise = require('typescript-project-services/lib/promise');
 import project = require('typescript-project-services/lib/project');
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
-/**
- * A simple Promise Queue
- */
-export class PromiseQueue {
-    /**
-     * the current promise
-     */
-    private promise;
-    /**
-     * the resolve function of the initial promise
-     */
-    private initializer;
-    /**
-     * true if the queue has been initialized
-     */
-    private initialized;
-    constructor();
-    /**
-     * initialize the queue subsequent call reset the queue
-     *
-     * @param val the value passed as initialial result
-     */
-    init<T>(val: promise.Promise<T>): promise.Promise<T>;
-    /**
-     * enqueue an action
-     */
-    then<T>(action: () => promise.Promise<T>): promise.Promise<T>;
-    /**
-     * enqueue an action
-     */
-    then<T>(action: () => T): promise.Promise<T>;
+export interface PromiseQueue {
+    then<T>(callback: () => promise.Promise<T>): promise.Promise<T>;
+    then<T>(callback: () => T): promise.Promise<T>;
+    reset<T>(item: promise.Promise<T>): promise.Promise<T>;
 }
+export function createPromiseQueue(): PromiseQueue;
 export function mapValues<T>(map: {
     [index: string]: T;
 }): T[];

@@ -5,72 +5,98 @@ import path                    = require('path');
 import project                 = require('./project');
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 
-/**
- * A simple Promise Queue
- */
-export class PromiseQueue {
+
+type PromiseQueueItem = promise.Promise<any> | (() => promise.Promise<any>) | (() => any);
+
+export interface PromiseQueue {
+    then<T>(callback: () => promise.Promise<T>): promise.Promise<T>;
+    then<T>(callback: () => T): promise.Promise<T>;
     
-    /**
-     * the current promise
-     */
-    private promise: promise.Promise<any>;
     
-    /**
-     * the resolve function of the initial promise
-     */
-    private initializer: (result: any) => any;
+    reset<T>(item: promise.Promise<T>): promise.Promise<T>;
+}
+
+interface Deferred {
+    resolve(t: any): void;
+    reject(reaison: any): void;
+}
+
+export function createPromiseQueue(): PromiseQueue {
     
-    /**
-     * true if the queue has been initialized
-     */
-    private initialized: boolean = false;
+    var idHelper = 1;
+    var items: number[] = [];
+    var itemsMap: {[index: number]: PromiseQueueItem} = {};
+    var itemsDeferred: {[index: number]: Deferred } = {};
     
-    constructor() {
-        this.promise = new promise.Promise(resolve => {
-            this.initializer = resolve;    
-        });
-    }
+    var ready: boolean = true;
+    var initialized: boolean = false;
     
-    /**
-     * initialize the queue subsequent call reset the queue
-     * 
-     * @param val the value passed as initialial result
-     */
-    init<T>(val: promise.Promise<T>): promise.Promise<T>;
-    
-    /**
-     * initialize the queue subsequent call reset the queue
-     * 
-     * @param val the value passed as initialial result
-     */
-    init<T>(val: T): promise.Promise<T> {
-        if (this.initialized) {
-            this.promise = promise.Promise.resolve(val);
-        } else {
-            this.initialized = true;
-            this.initializer(val);
-            return this.promise;
+    function drainQueue():void {
+        if (ready && initialized) {
+            var id = items.shift();
+            if (!id) {
+                return;
+            }
+            
+            ready = false;
+            var item = itemsMap[id];
+            var deferred = itemsDeferred[id];
+            
+            delete itemsMap[id];
+            delete itemsDeferred[id];
+            
+            if (typeof item === 'function') {
+                try {
+                    item = (<any>item)();
+                } catch(e) {
+                    deferred.reject(e)
+                    ready = true;
+                    drainQueue();
+                }
+            }
+            
+            promise.Promise.resolve(item)
+                .then(result => {
+                    deferred.resolve(result);
+                    ready = true;
+                    drainQueue();
+                }, error => {
+                    deferred.reject(error)
+                    ready = true;
+                    drainQueue();
+                });
         }
     }
+   
+    function reset<T>(task: promise.Promise<T>) {
+        var id = idHelper++;
+        initialized = true;
+        items.unshift(id);
+        itemsMap[id] = task;
+        var result = new promise.Promise<T>(function (resolve: any, reject: any) {
+            itemsDeferred[id] = { resolve, reject };
+        });
+        drainQueue();
+        return result;
+    } 
     
-    /**
-     * enqueue an action
-     */
-    then<T>(action: () => promise.Promise<T>): promise.Promise<T>;
-    /**
-     * enqueue an action
-     */
-    then<T>(action: () => T): promise.Promise<T>;
-    /**
-     * enqueue an action
-     */
-    then(action: () => void): promise.Promise<void> {
-        return this.promise = this.promise.then(
-            () => action(), 
-            () => action()
-        );
+    function then<T>(callback: (() => promise.Promise<T>) |  (() => T)) {
+        var id = idHelper++;
+        
+        items.push(id);
+        itemsMap[id] = callback;
+        var result = new promise.Promise<T>(function (resolve: any, reject: any) {
+            itemsDeferred[id] = { resolve, reject };
+        });
+        
+        drainQueue();
+        return result;
     }
-}
+    
+    return { then, reset };
+} 
+
+
 
 
 export function mapValues<T>(map: { [index: string]: T }): T[] {
