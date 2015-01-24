@@ -38,7 +38,7 @@ module.exports = function (grunt) {
                 src: ['<%= dirs.declarations %>/*.d.ts', '<%= dirs.main %>/**/*.ts'],
                 dest: '<%= dirs.built %>',
                 options: {
-                    sourceMap: true,
+                    sourceMap: false,
                     declaration: false
                 }
             },
