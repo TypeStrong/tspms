@@ -1,3 +1,22 @@
+declare module 'typescript-project-services/lib/compilerManager' {
+
+import ts = require('typescript');
+import fs = require('typescript-project-services/lib/fileSystem');
+import promise = require('typescript-project-services/lib/promise');
+export type TypeScriptInfo = {
+    path: string;
+    typeScript: typeof ts;
+    libLocation: string;
+    documentRegistry: ts.DocumentRegistry;
+};
+export function init(fs: fs.IFileSystem, libLocation: string): void;
+export function getDefaultTypeScriptInfo(): TypeScriptInfo;
+export function acquireCompiler(typescriptPath: string): promise.Promise<TypeScriptInfo>;
+export function releaseCompiler(typeScriptInfo: TypeScriptInfo): void;
+
+
+}
+
 declare module 'typescript-project-services/lib/fileSystem' {
 
 import promise = require('typescript-project-services/lib/promise');
@@ -169,6 +188,8 @@ import promise = require('typescript-project-services/lib/promise');
 import fs = require('typescript-project-services/lib/fileSystem');
 import ws = require('typescript-project-services/lib/workingSet');
 import LanguageServiceHost = require('typescript-project-services/lib/languageServiceHost');
+import compilerManager = require('typescript-project-services/lib/compilerManager');
+import TypeScriptInfo = compilerManager.TypeScriptInfo;
 /**
  * Project Configuration
  */
@@ -238,11 +259,7 @@ export const enum ProjectFileKind {
      */
     REFERENCE = 2,
 }
-export type TypeScriptInfo = {
-    typeScript: typeof ts;
-    libLocation: string;
-};
-export function createProject(documentRegistry: ts.DocumentRegistry, baseDirectory: string, config: TypeScriptProjectConfig, fileSystem: fs.IFileSystem, workingSet: ws.IWorkingSet, defaultLibLocation: string): TypeScriptProject;
+export function createProject(baseDirectory: string, config: TypeScriptProjectConfig, fileSystem: fs.IFileSystem, workingSet: ws.IWorkingSet): TypeScriptProject;
 
 
 }

@@ -2,6 +2,7 @@
 
 jest.dontMock('../project');
 jest.dontMock('../utils');
+jest.dontMock('../compilerManager');
 jest.dontMock('./fileSystemMock');
 jest.dontMock('./workingSetMock');
 
@@ -12,6 +13,7 @@ import WorkingSetMock = require('./workingSetMock');
 import project = require('../project');
 import utils = require('../utils');
 import TypeScriptProject = project.TypeScriptProject;
+import compilerManager = require('../compilerManager');
 
 
 interface Config {
@@ -44,22 +46,22 @@ describe('project test', function () {
         module: ts.ModuleKind.None,
         noLib: false
     }
+    
+    
     function createProject(baseDir: string, config: Config, init = true) {
-        
+        compilerManager.init(fileSystemMock, defaultLibLocation);
         var projectConfig = {
             sources: config.sources,
             compilationSettings: utils.assign({}, defaultCompilationSettings, config.compilationSettings || {}),
             typescriptPath: config.typescriptPath
         }
         
-        var registry = ts.createDocumentRegistry();
+        
         typeScriptProject = project.createProject(
-            registry,
             baseDir,
             projectConfig,
             fileSystemMock,
-            workingSetMock,
-            defaultLibLocation
+            workingSetMock
         );
         
         if (init) {
@@ -436,7 +438,10 @@ describe('project test', function () {
 
             fileSystemMock.setFiles({
                 '/typescript/bin/typescriptServices.js' : 
-                    'var ts = { createLanguageService: function () {  return { id:\'hello\', dispose : function () {}} } };',
+                    'var ts = { ' +
+                    '  createLanguageService: function () {  return { id:\'hello\', dispose : function () {}} },' +
+                    '  createDocumentRegistry: function () {  return { } }' +
+                    '}' ,
                 
                 '/lib.d.ts': ''
             });

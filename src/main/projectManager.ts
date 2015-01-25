@@ -15,9 +15,8 @@ import createProject = project.createProject;
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 
 import utils = require('./utils');
-import console      = require('./logger');
-
-
+import console  = require('./logger');
+import compilerManager = require('./compilerManager');
 
 
 
@@ -62,7 +61,7 @@ var workingSet: ws.IWorkingSet;
 /**
  * a map containing the projects 
  */
-var projectMap: { [key: string]: any /**Project*/} = {};
+var projectMap: { [key: string]: TypeScriptProject } = {};
 
 /**
  * tempory Project used for typescript file 
@@ -88,7 +87,6 @@ var defaultTypeScriptLocation: string;
 
 var projectConfigs: { [projectId: string]: TypeScriptProjectConfig; };
 
-var documentRegistry = ts.createDocumentRegistry();
 
 //-------------------------------
 //  Private 
@@ -119,7 +117,6 @@ function disposeProjects(): void {
 }
 
 
-
 /**
  * for given config and projectId create a project
  * 
@@ -127,21 +124,13 @@ function disposeProjects(): void {
  * @param config the project config
  */
 function createProjectFromConfig(projectId: string, config: TypeScriptProjectConfig) {
-    var project = createProject(
-        documentRegistry,
-        projectRootDir,
-        config,
-        fileSystem,
-        workingSet,
-        path.join(defaultTypeScriptLocation, 'lib.d.ts')
-    );
+    var project = createProject(projectRootDir, config, fileSystem, workingSet);
     return project.init().then(() => {
         projectMap[projectId] = project;
     }, () => {
         console.error('could not create project:' + projectId);
     });
 }
-
 
 
 //-------------------------------
@@ -159,6 +148,8 @@ export function init(config: ProjectManagerConfig): promise.Promise<void> {
     workingSet = config.workingSet;
     fileSystem = config.fileSystem;
     projectConfigs = config.projectConfigs;
+    
+    compilerManager.init(config.fileSystem, config.defaultTypeScriptLocation);
 
     
     return queue.reset(fileSystem.getProjectRoot().then(rootDir => {
@@ -225,14 +216,8 @@ export function getProjectForFile(fileName: string): promise.Promise<TypeScriptP
                     noLib: false
                 }
             }
-            tempProject = project = createProject(
-                documentRegistry,
-                projectRootDir,
-                config,
-                fileSystem,
-                workingSet,
-                path.join(defaultTypeScriptLocation, 'lib.d.ts')
-            );
+            tempProject = project = 
+                createProject(projectRootDir, config, fileSystem, workingSet);
             return tempProject.init().then(() => tempProject);
         }
 

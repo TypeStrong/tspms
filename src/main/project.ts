@@ -16,6 +16,8 @@ import console      = require('./logger');
 
 
 import LanguageServiceHost      = require('./languageServiceHost');
+import compilerManager = require('./compilerManager');
+import TypeScriptInfo = compilerManager.TypeScriptInfo;
 
 //--------------------------------------------------------------------------
 //
@@ -125,18 +127,12 @@ export const enum ProjectFileKind {
 
 
 
-export type TypeScriptInfo = {
-    typeScript: typeof ts
-    libLocation: string;
-}
 
 export function createProject(
-    documentRegistry: ts.DocumentRegistry,
     baseDirectory: string, 
     config: TypeScriptProjectConfig, 
     fileSystem: fs.IFileSystem, 
-    workingSet: ws.IWorkingSet, 
-    defaultLibLocation: string ): TypeScriptProject {
+    workingSet: ws.IWorkingSet): TypeScriptProject {
     
     //-------------------------------
     //  variables
@@ -182,51 +178,6 @@ export function createProject(
     
     
     
-    //-------------------------------
-    //  private methods
-    //-------------------------------
-    
-    /**
-     * Retrieve a ServiceFactory from a given typeScriptService file path
-     * @param typescriptPath
-     */
-    function getTypeScriptInfosForPath(typescriptPath: string): promise.Promise<TypeScriptInfo> {
-        var defaultTypeScript = promise.Promise.resolve({
-            typeScript:  ts,
-            libLocation: defaultLibLocation
-        });
-        if (!typescriptPath) {
-            return defaultTypeScript
-        } else {
-            
-            return promise.Promise.resolve()
-            .then(() => {
-                var typescriptServicesFile = path.join(typescriptPath, 'bin', 'typescriptServices.js');
-                var libFile = path.join(typescriptPath, 'bin', 'lib.d.ts');
-                
-            
-                return fileSystem.readFile(typescriptServicesFile).then(code => {
-                    var func = new Function(code + ';return ts;'),
-                        generatedTs: typeof ts = func();
-                    
-                    if (!generatedTs) {
-                        throw new Error('Invalid typescript file')
-                    }
-
-                    return {
-                        typeScript: generatedTs,
-                        libLocation: libFile
-                    };
-                })     
-            })
-            .catch(e => {
-                //TODO instead of silently returning default we should handle this error in project
-                //manager and return an error in the linter
-                console.warn('could not retrieve typescript compiler at path: ' + typescriptPath);
-                return defaultTypeScript;
-            });
-        }
-    }
     
     
     /**
@@ -507,16 +458,31 @@ export function createProject(
         workingSet.documentEdited.add(documentEditedHandler);
         fileSystem.projectFilesChanged.add(filesChangeHandler);
         
-            
+        var typescriptPath = _config.typescriptPath;
         return queue.reset(
-            getTypeScriptInfosForPath(_config.typescriptPath)
+            new promise.Promise<TypeScriptInfo>((resolve, reject) => {
+                if (!typescriptPath) {
+                    resolve(compilerManager.getDefaultTypeScriptInfo())
+                } else {
+                    resolve(
+                        compilerManager
+                        .acquireCompiler(_config.typescriptPath)
+                        .catch(e => {
+                            //TODO instead of silently returning default we should handle this error in project
+                            //manager and return an error in the linter
+                            console.warn('could not retrieve typescript compiler at path: ' + typescriptPath);
+                            return compilerManager.getDefaultTypeScriptInfo();
+                        })
+                    );
+                } 
+            })
             .then(info =>  {
                 typeScriptInfo = info;
                 languageServiceHost = LanguageServiceHost.create(baseDirectory, typeScriptInfo.libLocation);
                 languageServiceHost.setCompilationSettings(utils.clone(_config.compilationSettings));
                 languageService = 
-                    typeScriptInfo.typeScript.createLanguageService(languageServiceHost, documentRegistry);
-                
+                    typeScriptInfo.typeScript.createLanguageService(languageServiceHost, info.documentRegistry);
+
                 return collectFiles().then(updateWorkingSet);
             })
         );
@@ -561,6 +527,7 @@ export function createProject(
         workingSet.workingSetChanged.remove(workingSetChangedHandler);
         workingSet.documentEdited.remove(documentEditedHandler);
         fileSystem.projectFilesChanged.remove(filesChangeHandler);
+        compilerManager.releaseCompiler(typeScriptInfo);
         languageService.dispose();
     }
     
