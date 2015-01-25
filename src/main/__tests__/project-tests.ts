@@ -189,7 +189,7 @@ describe('project test', function () {
             expect(typeScriptProject.getProjectFilesSet().hasOwnProperty(defaultLibLocation)).toBe(true);
         });
 
-        it('should not add the default library if noLib is not specified or false', function () {
+        it('should not add the default library if noLib is true', function () {
             fileSystemMock.setFiles({
                 '/src/file1.ts': '',
                 '/lib.d.ts': ''
@@ -199,7 +199,9 @@ describe('project test', function () {
                 sources: [
                     'src/**/*ts'
                 ],
-                noLib: true
+                compilationSettings: {
+                    noLib: true
+                }
             });
             jest.runAllTimers();
 
@@ -430,11 +432,14 @@ describe('project test', function () {
             ]);
         });
         
-        xit('should create a new typescript factory instance if a typescript path is specified', function () {
+        it('should create a new typescript factory instance if a typescript path is specified', function () {
 
-
-            var mockTypeScript:typeof ts = <any>jest.genMockFromModule<typeof ts>('typescript')
-            jest.setMock('/typescript/bin/typescriptServices.js', mockTypeScript);
+            fileSystemMock.setFiles({
+                '/typescript/bin/typescriptServices.js' : 
+                    'var ts = { createLanguageService: function () {  return { id:\'hello\', dispose : function () {}} } };',
+                
+                '/lib.d.ts': ''
+            });
 
             createProject('/', {
                 sources: [
@@ -445,7 +450,7 @@ describe('project test', function () {
 
             jest.runAllTimers();
 
-            expect(mockTypeScript.createLanguageService).toBeCalled();
+            expect((<any>typeScriptProject.getLanguageService()).id).toBe('hello');
         });
         
     });

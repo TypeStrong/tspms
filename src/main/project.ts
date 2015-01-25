@@ -137,6 +137,7 @@ export function createProject(
     fileSystem: fs.IFileSystem, 
     workingSet: ws.IWorkingSet, 
     defaultLibLocation: string ): TypeScriptProject {
+    
     //-------------------------------
     //  variables
     //-------------------------------
@@ -173,12 +174,10 @@ export function createProject(
      */
     var queue = utils.createPromiseQueue()
     
+       
     /**
-     * location of the typescript 'lib.d.ts' file
+     * info for the curently use typescript compiler
      */
-    var libLocation: string;
-    
-    
     var typeScriptInfo: TypeScriptInfo;
     
     
@@ -191,37 +190,42 @@ export function createProject(
      * Retrieve a ServiceFactory from a given typeScriptService file path
      * @param typescriptPath
      */
-    function getTypeScriptInfosForPath(typescriptPath: string): TypeScriptInfo {
-        return {
+    function getTypeScriptInfosForPath(typescriptPath: string): promise.Promise<TypeScriptInfo> {
+        var defaultTypeScript = promise.Promise.resolve({
             typeScript:  ts,
             libLocation: defaultLibLocation
-        };
-        //TODO
-//        if (!typescriptPath) {
-//            return {
-//                typeScript:  ts,
-//                libLocation: defaultLibLocation
-//            };
-//        } else {
-//            var typescriptServicesFile = path.join(typescriptPath, 'bin', 'typescriptServices.js');
-//            try {
-//                var generatedTs = require(typescriptPath);
-//                return {
-//                    typeScript: generatedTs,
-//                    libLocation: path.join(typescriptPath, 'lib.d.ts')
-//                };
-//            } catch(e) {
-//                //TODO instead of silently returning default we should handle this error in project
-//                //manager and return an error in the linter
-//                if (logger.error()) {
-//                    logger.log('could not retrieve typescript compiler at path: ' + typescriptPath);
-//                }
-//                return {
-//                    typeScript: ts,
-//                    libLocation: defaultLibLocation
-//                };
-//            }
-//        }
+        });
+        if (!typescriptPath) {
+            return defaultTypeScript
+        } else {
+            
+            return promise.Promise.resolve()
+            .then(() => {
+                var typescriptServicesFile = path.join(typescriptPath, 'bin', 'typescriptServices.js');
+                var libFile = path.join(typescriptPath, 'bin', 'lib.d.ts');
+                
+            
+                return fileSystem.readFile(typescriptServicesFile).then(code => {
+                    var func = new Function(code + ';return ts;'),
+                        generatedTs: typeof ts = func();
+                    
+                    if (!generatedTs) {
+                        throw new Error('Invalid typescript file')
+                    }
+
+                    return {
+                        typeScript: generatedTs,
+                        libLocation: libFile
+                    };
+                })     
+            })
+            .catch(e => {
+                //TODO instead of silently returning default we should handle this error in project
+                //manager and return an error in the linter
+                console.warn('could not retrieve typescript compiler at path: ' + typescriptPath);
+                return defaultTypeScript;
+            });
+        }
     }
     
     
@@ -254,8 +258,8 @@ export function createProject(
                 }
             });
             
-            if (!_config.compilationSettings.noLib && !projectFilesSet[libLocation]) {
-                promises.push(addFile(libLocation));
+            if (!_config.compilationSettings.noLib && !projectFilesSet[typeScriptInfo.libLocation]) {
+                promises.push(addFile(typeScriptInfo.libLocation));
             }
             
             return promise.Promise.all(promises);
@@ -462,6 +466,7 @@ export function createProject(
                 var mustUpdate: boolean = false,
                     oldPaths = utils.createMap(getReferencedOrImportedFiles(record.path)),
                     lastChange: ws.DocumentChangeDescriptor;
+                
                 record.changeList.some(change => {
                     lastChange = change;
                     if (!change.from || !change.to) {
@@ -502,13 +507,19 @@ export function createProject(
         workingSet.documentEdited.add(documentEditedHandler);
         fileSystem.projectFilesChanged.add(filesChangeHandler);
         
-        typeScriptInfo = getTypeScriptInfosForPath(_config.typescriptPath);
-        libLocation = typeScriptInfo.libLocation;
-        languageServiceHost = LanguageServiceHost.create(baseDirectory, libLocation);
-        languageServiceHost.setCompilationSettings(_config.compilationSettings);
-        languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, documentRegistry);
-    
-        return queue.reset(collectFiles().then(updateWorkingSet));
+            
+        return queue.reset(
+            getTypeScriptInfosForPath(_config.typescriptPath)
+            .then(info =>  {
+                typeScriptInfo = info;
+                languageServiceHost = LanguageServiceHost.create(baseDirectory, typeScriptInfo.libLocation);
+                languageServiceHost.setCompilationSettings(utils.clone(_config.compilationSettings));
+                languageService = 
+                    typeScriptInfo.typeScript.createLanguageService(languageServiceHost, documentRegistry);
+                
+                return collectFiles().then(updateWorkingSet);
+            })
+        );
     }
     
     /**
@@ -523,7 +534,7 @@ export function createProject(
         languageService.cleanupSemanticCache();
         
         if (!_config.compilationSettings.noLib && config.compilationSettings.noLib) {
-            removeFile(libLocation);
+            removeFile(typeScriptInfo.libLocation);
         }
         
         var pojectSources = Object.keys(projectFilesSet).filter(fileName => isProjectSourceFile(fileName));
