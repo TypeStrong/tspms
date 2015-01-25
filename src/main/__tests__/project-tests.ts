@@ -12,10 +12,25 @@ import WorkingSetMock = require('./workingSetMock');
 import project = require('../project');
 import utils = require('../utils');
 import TypeScriptProject = project.TypeScriptProject;
-import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 
 
-
+interface Config {
+    /**
+     * Array of minimatch pattern string representing 
+     * sources of a project
+     */
+    sources: string[];
+    
+    /**
+     * Compiltation settings
+     */
+    compilationSettings?: ts.CompilerOptions;
+        
+    /**
+     * Path to an alternative typescriptCompiler
+     */
+    typescriptPath?: string;
+}
 
 describe('project test', function () {
     var fileSystemMock: FileSystemMock,
@@ -24,12 +39,24 @@ describe('project test', function () {
 
 
     var defaultLibLocation = '/lib.d.ts';
-    function createProject(baseDir: string, config: TypeScriptProjectConfig, init = true) {
+    var defaultCompilationSettings: ts.CompilerOptions = {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.None,
+        noLib: false
+    }
+    function createProject(baseDir: string, config: Config, init = true) {
+        
+        var projectConfig = {
+            sources: config.sources,
+            compilationSettings: utils.assign({}, defaultCompilationSettings, config.compilationSettings || {}),
+            typescriptPath: config.typescriptPath
+        }
+        
         var registry = ts.createDocumentRegistry();
         typeScriptProject = project.createProject(
             registry,
             baseDir,
-            utils.assign({}, utils.typeScriptProjectConfigDefault, config),
+            projectConfig,
             fileSystemMock,
             workingSetMock,
             defaultLibLocation
@@ -439,7 +466,9 @@ describe('project test', function () {
             });
 
             createProject('/', {
-                target: 'es5',
+                compilationSettings: {
+                    target: ts.ScriptTarget.ES5
+                },
                 sources: [
                     'src/file1.ts'
                 ]
@@ -447,8 +476,13 @@ describe('project test', function () {
             jest.runAllTimers();
         });
 
-        function updateProject(config: TypeScriptProjectConfig) {
-            typeScriptProject.update(utils.assign({}, utils.typeScriptProjectConfigDefault, config));
+        function updateProject(config: Config) {
+             var projectConfig = {
+                sources: config.sources,
+                compilationSettings: utils.assign({}, defaultCompilationSettings, config.compilationSettings || {}),
+                typescriptPath: config.typescriptPath
+            }
+            typeScriptProject.update(projectConfig);
         }
 
         it('should update compilerOptions if compiler options does have changed', function () {
@@ -456,8 +490,10 @@ describe('project test', function () {
                 .toBe(ts.ScriptTarget.ES5);
 
             updateProject({
-                target: 'es3',
-                module: 'commonjs',
+                compilationSettings: {
+                    target: ts.ScriptTarget.ES3,
+                    module: ts.ModuleKind.CommonJS
+                },
                 sources: ['src/file1.ts']
             });
             jest.runAllTimers();
@@ -470,8 +506,10 @@ describe('project test', function () {
         it('should remove project files that are not included anymore in the source', function () {
             expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/src/file1.ts')).toBe(true);
             updateProject({
-                target: 'es3',
-                module: 'commonjs',
+                compilationSettings: {
+                    target: ts.ScriptTarget.ES3,
+                    module: ts.ModuleKind.CommonJS
+                },
                 sources: []
             });
 
@@ -485,8 +523,10 @@ describe('project test', function () {
         it('should add project files that matches the new configuration', function () {
             expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/src/file2.ts')).toBeFalsy();
             updateProject({
-                target: 'es3',
-                module: 'commonjs',
+                compilationSettings: {
+                    target: ts.ScriptTarget.ES3,
+                    module: ts.ModuleKind.CommonJS
+                },
                 sources: [
                     'src/file2.ts'
                 ]
@@ -502,8 +542,10 @@ describe('project test', function () {
         it('should remove project files that are not referenced anymore in the source', function () {
             expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/src/file3.ts')).toBe(true);
             updateProject({
-                target: 'es3',
-                module: 'commonjs',
+                compilationSettings: {
+                    target: ts.ScriptTarget.ES3,
+                    module: ts.ModuleKind.CommonJS
+                },
                 sources: [
                     'src/file2.ts'
                 ]
@@ -519,8 +561,10 @@ describe('project test', function () {
         it('should add project files that are now referenced by a file in the sources', function () {
             expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/src/file4.ts')).toBeFalsy();
             updateProject({
-                target: 'es3',
-                module: 'commonjs',
+                compilationSettings: {
+                    target: ts.ScriptTarget.ES3,
+                    module: ts.ModuleKind.CommonJS
+                },
                 sources: [
                     'src/file2.ts'
                 ]
@@ -535,9 +579,11 @@ describe('project test', function () {
         it('should remove default lib if the new config noLib properties is set to true', function () {
             expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/lib.d.ts')).toBe(true);
             updateProject({
-                target: 'es3',
-                module: 'commonjs',
-                noLib: true,
+                compilationSettings: {
+                    target: ts.ScriptTarget.ES3,
+                    module: ts.ModuleKind.CommonJS,
+                    noLib: true
+                },
                 sources: []
             });
 
@@ -555,8 +601,10 @@ describe('project test', function () {
             ];
 
             updateProject({
-                target: 'es3',
-                module: 'commonjs',
+                compilationSettings: {
+                    target: ts.ScriptTarget.ES3,
+                    module: ts.ModuleKind.CommonJS
+                },
                 sources: [
                     'src/file2.ts'
                 ]
@@ -574,7 +622,9 @@ describe('project test', function () {
             expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/src/file2.ts')).toBeFalsy();
 
             updateProject({
-                target: 'es3',
+                compilationSettings: {
+                    target: ts.ScriptTarget.ES3
+                },
                 typescriptPath: 'typescript',
                 sources: [
                     'src/file2.ts'

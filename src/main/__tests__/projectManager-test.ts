@@ -10,6 +10,17 @@ import utils = require('../utils');
 import FileSystemMock = require('./fileSystemMock');
 import promise  = require('../promise');
 import Promise  = promise.Promise;
+import ts = require('typescript');
+
+ type ProjectConfig = {
+    sources?: string[];
+    compilationSettings?: ts.CompilerOptions;
+
+    /**
+     * Path to an alternative typescriptCompiler
+     */
+    typescriptPath?: string;
+} 
 
 describe('TypeScriptProjectManager', function () {
     var fileSystemMock: FileSystemMock,
@@ -20,8 +31,11 @@ describe('TypeScriptProjectManager', function () {
         },
         createProjectMock = <jest.Mock<any>>TypeScriptProject.createProject
     
+    
+   
+    
     function initiProjectManager(
-        projectConfigs: { [projectId: string]: TypeScriptProject.TypeScriptProjectConfig; },
+        projectConfigs: { [projectId: string]: ProjectConfig; },
         files?: { [fileName: string]: string; }
     ) {
         fileSystemMock = new FileSystemMock();
@@ -29,7 +43,7 @@ describe('TypeScriptProjectManager', function () {
              fileSystemMock.setFiles(files)
         }
         projectManager.init({
-            projectConfigs: projectConfigs,
+            projectConfigs: (<any> projectConfigs),
             defaultTypeScriptLocation: 'lib.d.ts',
             fileSystem: fileSystemMock,
             workingSet: null
@@ -95,7 +109,7 @@ describe('TypeScriptProjectManager', function () {
             
             jest.runAllTimers();
             
-            projectManager.updateProjectConfigs({
+            projectManager.updateProjectConfigs(<any>{
                 project1: {}
             })
 
@@ -114,7 +128,7 @@ describe('TypeScriptProjectManager', function () {
                 project2: {}
             });
             
-            projectManager.updateProjectConfigs({
+            projectManager.updateProjectConfigs(<any>{
                 project1: {},
                 project2: {},
                 project3: {}
@@ -134,7 +148,7 @@ describe('TypeScriptProjectManager', function () {
             });
             jest.runAllTimers();
             
-            projectManager.updateProjectConfigs({
+            projectManager.updateProjectConfigs(<any>{
                 project1: {},
                 project2: {}
             });
@@ -187,14 +201,18 @@ describe('TypeScriptProjectManager', function () {
             
             initiProjectManager({
                 project1: {
-                    module: 'amd',
+                    compilationSettings: {
+                      module: ts.ModuleKind.AMD  
+                    },
                     sources: [
                         './file1.ts'
                     ],
                     outDir: 'bin'
                 },
                 project2: {
-                    module: 'commonjs',
+                    compilationSettings: {
+                      module: ts.ModuleKind.CommonJS  
+                    },
                     sources: [
                         './file2.ts'
                     ],

@@ -36,41 +36,18 @@ export type TypeScriptProjectConfig = {
      * Array of minimatch pattern string representing 
      * sources of a project
      */
-    sources?: string[];
+    sources: string[];
     
+    /**
+     * Compiltation settings
+     */
+    compilationSettings: ts.CompilerOptions;
+        
     /**
      * Path to an alternative typescriptCompiler
      */
     typescriptPath?: string;
     
-    
-    //---------------------------------------------
-    //  Compiler Settings
-    //---------------------------------------------
-    
-    /**
-     * should the project include the default typescript library file
-     */
-    noLib?: boolean;
-    /**
-     * 
-     */
-    target?: string;
-    
-    /**
-     * Specify ECMAScript target version: 'ES3' (default), or 'ES5'
-     */
-    module?: string;
-    
-    /**
-     * Specifies the location where debugger should locate TypeScript files instead of source locations.
-     */
-    sourceRoot?: string;
-    
-    /**
-     *  Warn on expressions and declarations with an implied 'any' type.
-     */
-    noImplicitAny?: boolean;
 }
 
 export interface TypeScriptProject {
@@ -247,32 +224,6 @@ export function createProject(
 //        }
     }
     
-    /**
-     * create Typescript compilation settings from config file
-     */
-    function createCompilationSettings(): ts.CompilerOptions {
-        var compilationSettings = <ts.CompilerOptions>{},
-            moduleType = _config.module.toLowerCase();
-        
-        compilationSettings.noLib = _config.noLib;
-        compilationSettings.noImplicitAny = _config.noImplicitAny;
-        compilationSettings.sourceRoot = _config.sourceRoot;
-        
-        compilationSettings.target = 
-            _config.target.toLowerCase() === 'es3' ? 
-                ts.ScriptTarget.ES3: 
-                ts.ScriptTarget.ES5;
-        
-        compilationSettings.module = 
-            moduleType === 'none' ? 
-                ts.ModuleKind.None : 
-                moduleType === 'amd' ?
-                    ts.ModuleKind.AMD :
-                    ts.ModuleKind.CommonJS
-            ;
-        
-        return compilationSettings;
-    }
     
     /**
      * update the languageService host script 'open' status 
@@ -303,7 +254,7 @@ export function createProject(
                 }
             });
             
-            if (!_config.noLib && !projectFilesSet[libLocation]) {
+            if (!_config.compilationSettings.noLib && !projectFilesSet[libLocation]) {
                 promises.push(addFile(libLocation));
             }
             
@@ -554,7 +505,7 @@ export function createProject(
         typeScriptInfo = getTypeScriptInfosForPath(_config.typescriptPath);
         libLocation = typeScriptInfo.libLocation;
         languageServiceHost = LanguageServiceHost.create(baseDirectory, libLocation);
-        languageServiceHost.setCompilationSettings(createCompilationSettings());
+        languageServiceHost.setCompilationSettings(_config.compilationSettings);
         languageService = typeScriptInfo.typeScript.createLanguageService(languageServiceHost, documentRegistry);
     
         return queue.reset(collectFiles().then(updateWorkingSet));
@@ -571,14 +522,14 @@ export function createProject(
         }
         languageService.cleanupSemanticCache();
         
-        if (!_config.noLib && config.noLib) {
+        if (!_config.compilationSettings.noLib && config.compilationSettings.noLib) {
             removeFile(libLocation);
         }
         
         var pojectSources = Object.keys(projectFilesSet).filter(fileName => isProjectSourceFile(fileName));
         _config = config;
         return queue.then(() => {
-            languageServiceHost.setCompilationSettings(createCompilationSettings());
+            languageServiceHost.setCompilationSettings(_config.compilationSettings);
             var promises: promise.Promise<any>[] = [];
             pojectSources.forEach(fileName => {
                 if (!isProjectSourceFile(fileName)) {

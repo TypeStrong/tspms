@@ -147,15 +147,6 @@ export function pathResolve(from: string, to: string): string {
 }
 
 
-/**
- * Default configuration for typescript project
- */
-export var typeScriptProjectConfigDefault: TypeScriptProjectConfig = {
-    noLib: false,
-    target: 'es3',
-    module: 'none',
-    noImplicitAny: false
-};
 
 
 

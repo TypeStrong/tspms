@@ -217,10 +217,14 @@ export function getProjectForFile(fileName: string): promise.Promise<TypeScriptP
 
         //then if still no project found we create the temp project
         if (!project) {
-            var config: TypeScriptProjectConfig = utils.clone(utils.typeScriptProjectConfigDefault);
-            config.target = 'es5';
-            config.module = 'commonjs';
-            config.sources = [fileName];
+            var config: TypeScriptProjectConfig = {
+                sources: [fileName],
+                compilationSettings: {
+                    target: ts.ScriptTarget.Latest,
+                    module: ts.ModuleKind.CommonJS,
+                    noLib: false
+                }
+            }
             tempProject = project = createProject(
                 documentRegistry,
                 projectRootDir,
