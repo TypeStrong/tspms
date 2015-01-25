@@ -8,6 +8,7 @@ import ws = require('./workingSet');
 import project = require('./project');
 import serviceUtils = require('./serviceUtils');
 import console = require('./logger');
+import utils = require('./utils');
 
 
 //--------------------------------------------------------------------------
@@ -51,6 +52,10 @@ export import WorkingSetChangeRecord = ws.WorkingSetChangeRecord;
 export import WorkingSetChangeKind = ws.WorkingSetChangeKind;
 
 export import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
+
+
+export import ISignal = utils.ISignal;
+export import Signal = utils.Signal;
 
 //--------------------------------------------------------------------------
 //  init
