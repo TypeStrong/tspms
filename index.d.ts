@@ -177,31 +177,15 @@ export type TypeScriptProjectConfig = {
      * Array of minimatch pattern string representing
      * sources of a project
      */
-    sources?: string[];
+    sources: string[];
+    /**
+     * Compiltation settings
+     */
+    compilationSettings: ts.CompilerOptions;
     /**
      * Path to an alternative typescriptCompiler
      */
     typescriptPath?: string;
-    /**
-     * should the project include the default typescript library file
-     */
-    noLib?: boolean;
-    /**
-     *
-     */
-    target?: string;
-    /**
-     * Specify ECMAScript target version: 'ES3' (default), or 'ES5'
-     */
-    module?: string;
-    /**
-     * Specifies the location where debugger should locate TypeScript files instead of source locations.
-     */
-    sourceRoot?: string;
-    /**
-     *  Warn on expressions and declarations with an implied 'any' type.
-     */
-    noImplicitAny?: boolean;
 };
 export interface TypeScriptProject {
     /**
@@ -357,8 +341,6 @@ export function isKeyword(token: SyntaxKind, typeScript: typeof ts): boolean;
 declare module 'typescript-project-services/lib/utils' {
 
 import promise = require('typescript-project-services/lib/promise');
-import project = require('typescript-project-services/lib/project');
-import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 export interface PromiseQueue {
     then<T>(callback: () => promise.Promise<T>): promise.Promise<T>;
     then<T>(callback: () => T): promise.Promise<T>;
@@ -386,10 +368,6 @@ export function createMap(arr: string[]): {
  * browserify path.resolve is buggy on windows
  */
 export function pathResolve(from: string, to: string): string;
-/**
- * Default configuration for typescript project
- */
-export var typeScriptProjectConfigDefault: TypeScriptProjectConfig;
 /**
  * C# like events and delegates for typed events
  * dispatching
@@ -564,6 +542,7 @@ import fs = require('typescript-project-services/lib/fileSystem');
 import ws = require('typescript-project-services/lib/workingSet');
 import project = require('typescript-project-services/lib/project');
 import console = require('typescript-project-services/lib/logger');
+import utils = require('typescript-project-services/lib/utils');
 export import Logger = console.Logger;
 export var injectLogger: typeof console.injectLogger;
 export var injectPromiseLibrary: typeof promise.injectPromiseLibrary;
@@ -577,6 +556,8 @@ export import DocumentChangeRecord = ws.DocumentChangeRecord;
 export import WorkingSetChangeRecord = ws.WorkingSetChangeRecord;
 export import WorkingSetChangeKind = ws.WorkingSetChangeKind;
 export import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
+export import ISignal = utils.ISignal;
+export import Signal = utils.Signal;
 /**
  * Initializate the service
  *
