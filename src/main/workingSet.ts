@@ -110,10 +110,10 @@ export type DocumentChangeRecord = {
     /**
      * list of changes
      */
-    changeList: DocumentChangeDescriptor[];
+    changeList?: DocumentChangeDescriptor[];
     
     /**
      * documentText
      */
-    documentText: string
+    documentText?: string
 }

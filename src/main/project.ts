@@ -414,29 +414,19 @@ export function createProject(
     function documentEditedHandler(record: ws.DocumentChangeRecord) {
         queue.then(() => {
             if (projectFilesSet[record.path]) {
-                var mustUpdate: boolean = false,
-                    oldPaths = utils.createMap(getReferencedOrImportedFiles(record.path)),
+                var oldPaths = utils.createMap(getReferencedOrImportedFiles(record.path)),
                     lastChange: ws.DocumentChangeDescriptor;
                 
-                record.changeList.some(change => {
-                    lastChange = change;
-                    if (!change.from || !change.to) {
-                        mustUpdate = true;
-                    } else {
+                if (record.documentText) {
+                    languageServiceHost.updateScript(record.path, record.documentText);
+                } else {
+                     record.changeList.forEach(change => {
+                        lastChange = change;
                         var minChar = languageServiceHost.getIndexFromPosition(record.path, change.from),
                             limChar = languageServiceHost.getIndexFromPosition(record.path, change.to);
 
                         languageServiceHost.editScript(record.path, minChar, limChar, change.text);
-                    }
-                    return mustUpdate;
-                });
-                if (mustUpdate || languageServiceHost.getScriptContent(record.path) !== record.documentText) {
-                    if (mustUpdate) {
-                        console.warn('TypeScriptProject: inconsistent change descriptor: %s', JSON.stringify(lastChange, null,  4));
-                    } else {
-                        console.warn('TypeScriptProject: text different before and after change');
-                    }
-                    languageServiceHost.updateScript(record.path, record.documentText);
+                    });
                 }
 
                 updateReferences(record.path, oldPaths);
