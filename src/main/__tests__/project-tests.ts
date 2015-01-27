@@ -769,18 +769,11 @@ describe('project test', function () {
             workingSetMock.documentEdited.dispatch({
                 path: '/src/file1.ts',
                 changeList: [{
-                    from: {
-                        ch: 0,
-                        line: 0
-                    },
-                    to: {
-                        ch: 0,
-                        line: 0,
-                    },
+                    from: 0,
+                    to: 0,
                     text: 'console.log(\'hello world\')',
                     removed: ''
-                }],
-                documentText: 'console.log(\'hello world\')'
+                }]
             });
             jest.runAllTimers();
 
@@ -788,18 +781,11 @@ describe('project test', function () {
             workingSetMock.documentEdited.dispatch({
                 path: '/src/file1.ts',
                 changeList: [{
-                    from: {
-                        ch: 8,
-                        line: 0
-                    },
-                    to: {
-                        ch: 11,
-                        line: 0,
-                    },
+                    from: 8,
+                    to: 11,
                     text: 'warn',
                     removed: '',
-                }],
-                documentText: 'console.warn(\'hello world\')'
+                }]
             });
 
 
@@ -808,15 +794,9 @@ describe('project test', function () {
             expect(getProjectFileContent('/src/file1.ts')).toBe('console.warn(\'hello world\')');
         });
 
-        it('should set script with given document content if change dispatched does not have \'to\' or \'from\' property ', function () {
+        it('should set script with given document content ', function () {
             workingSetMock.documentEdited.dispatch({
                 path: '/src/file1.ts',
-                changeList: [{
-                    from: {
-                        ch: 0,
-                        line: 0
-                    }
-                }],
                 documentText: 'console.log(\'hello world\')'
             });
 
@@ -824,63 +804,12 @@ describe('project test', function () {
             jest.runAllTimers();
 
             expect(getProjectFileContent('/src/file1.ts')).toBe('console.log(\'hello world\')');
-            workingSetMock.documentEdited.dispatch({
-                path: '/src/file1.ts',
-                changeList: [{
-                    to: {
-                        ch: 11,
-                        line: 0,
-                    }
-                }],
-                documentText: 'console.warn(\'hello world\')'
-            });
-
-
-            jest.runAllTimers();
-
-            expect(getProjectFileContent('/src/file1.ts')).toBe('console.warn(\'hello world\')');
-        });
-
-        it('should set script with given document content if change dispatched are not coherent', function () {
-            workingSetMock.documentEdited.dispatch({
-                path: '/src/file1.ts',
-                changeList: [{
-                    from: {
-                        ch: 0,
-                        line: 0
-                    },
-                    to: {
-                        ch: 0,
-                        line: 0,
-                    },
-                    text: 'console.log(\'hello world\')',
-                    removed: ''
-                }],
-                documentText: 'console.warn(\'hello world\')'
-            });
-
-
-            jest.runAllTimers();
-
-            expect(getProjectFileContent('/src/file1.ts')).toBe('console.warn(\'hello world\')');
         });
 
 
         it('should revert a file when a document have been closed without saving', function () {
             workingSetMock.documentEdited.dispatch({
                 path: '/src/file1.ts',
-                changeList: [{
-                    from: {
-                        ch: 0,
-                        line: 0
-                    },
-                    to: {
-                        ch: 0,
-                        line: 0,
-                    },
-                    text: 'console.log(\'hello world\')',
-                    removed: ''
-                }],
                 documentText: 'console.log(\'hello world\')'
             });
             workingSetMock.removeFiles(['/src/file1.ts']);

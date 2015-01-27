@@ -414,21 +414,14 @@ export function createProject(
     function documentEditedHandler(record: ws.DocumentChangeRecord) {
         queue.then(() => {
             if (projectFilesSet[record.path]) {
-                var oldPaths = utils.createMap(getReferencedOrImportedFiles(record.path)),
-                    lastChange: ws.DocumentChangeDescriptor;
-                
+                var oldPaths = utils.createMap(getReferencedOrImportedFiles(record.path));
                 if (record.documentText) {
                     languageServiceHost.updateScript(record.path, record.documentText);
                 } else {
-                     record.changeList.forEach(change => {
-                        lastChange = change;
-                        var minChar = languageServiceHost.getIndexFromPosition(record.path, change.from),
-                            limChar = languageServiceHost.getIndexFromPosition(record.path, change.to);
-
-                        languageServiceHost.editScript(record.path, minChar, limChar, change.text);
+                    record.changeList.forEach(change => {
+                        languageServiceHost.editScript(record.path, change.from, change.to, change.text);
                     });
                 }
-
                 updateReferences(record.path, oldPaths);
             }
         });

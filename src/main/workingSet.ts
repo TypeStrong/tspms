@@ -80,12 +80,12 @@ export type DocumentChangeDescriptor = {
     /**
      * start position of the change
      */
-    from?: {ch: number; line: number};
+    from?: number;
     
     /**
      * end positon of the change
      */
-    to?: {ch: number; line: number};
+    to?: number;
     
     /**
      * text that has been inserted (if any)
