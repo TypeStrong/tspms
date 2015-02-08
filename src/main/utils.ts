@@ -1,8 +1,10 @@
 'use strict';
 
-import promise                 = require('./promise');
 import path                    = require('path');
+import minimatch               = require('minimatch');
+
 import project                 = require('./project');
+import promise                 = require('./promise');
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 
 
@@ -139,15 +141,14 @@ export function createMap(arr: string[]): { [string: string]: boolean} {
 
 /**
  * browserify path.resolve is buggy on windows
+ * @param from an ABSOLUTE path
+ * @param to an relative path
  */
 export function pathResolve(from: string, to: string): string {
     var result = path.resolve(from, to);
     var index = result.indexOf(from[0]);
     return result.slice(index);
 }
-
-
-
 
 
 
@@ -289,3 +290,50 @@ export function binarySearch(array: number[], value: number): number {
 
     return ~low;
 }
+
+
+function isAbsolute(fileName: string): boolean {
+    if (fileName.charAt(0) === "/" || fileName === "") {
+        return true;    
+    }
+    // pull off the device/UNC bit from a windows path.
+    // from node's lib/path.js
+    var splitDeviceRe =
+      /^([a-zA-Z]:|[\\\/]{2}[^\\\/]+[\\\/]+[^\\\/]+)?([\\\/])?([\s\S]*?)$/
+    var result = splitDeviceRe.exec(fileName)
+    var device = result[1] || ''
+    var isUnc = device && device.charAt(1) !== ':'
+    var isAbsolute = !!result[2] || isUnc // UNC paths are always absolute
+
+    return isAbsolute
+}
+
+
+export function match(baseDir: string, fileName: string, patterns: string[] | string, options?: minimatch.Options): boolean {
+    
+    var arrayPatterns = typeof patterns === 'string' ? [patterns] : patterns;
+    fileName = path.resolve(baseDir, fileName);
+    
+    var result: boolean = false;
+    for (var i = 0; i < arrayPatterns.length; i++) {
+        var pattern = arrayPatterns[i];
+        var exclusion = pattern.indexOf('!') === 0;
+        if (exclusion) { 
+            pattern = pattern.slice(1); 
+        }
+        
+        if (!isAbsolute(pattern)) {
+            pattern = path.resolve(baseDir, pattern);
+        }
+        
+        if (minimatch(fileName, pattern, options)) {
+            if (exclusion) {
+                return false;
+            } else {
+                result = true;
+            }
+        }
+    }
+    return result;
+}
+

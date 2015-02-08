@@ -2,7 +2,6 @@
 
 import ts           = require('typescript');
 import path         = require('path');
-import minimatch    = require('minimatch');
 import promise      = require('./promise');
 
 
@@ -222,8 +221,7 @@ export function createProject(
      * @param path
      */
     function isProjectSourceFile(fileName: string): boolean {
-        var relativeFileName = path.relative(baseDirectory, fileName);
-        return _config.sources.some(pattern => minimatch(relativeFileName, pattern) || minimatch(fileName, pattern));
+        return utils.match(baseDirectory, fileName, _config.sources);
     }
     
    

@@ -357,6 +357,7 @@ export function isKeyword(token: SyntaxKind, typeScript: typeof ts): boolean;
 
 declare module 'typescript-project-services/lib/utils' {
 
+import minimatch = require('minimatch');
 import promise = require('typescript-project-services/lib/promise');
 export interface PromiseQueue {
     then<T>(callback: () => promise.Promise<T>): promise.Promise<T>;
@@ -383,6 +384,8 @@ export function createMap(arr: string[]): {
 };
 /**
  * browserify path.resolve is buggy on windows
+ * @param from an ABSOLUTE path
+ * @param to an relative path
  */
 export function pathResolve(from: string, to: string): string;
 /**
@@ -456,6 +459,7 @@ export class Signal<T> implements ISignal<T> {
     hasListeners(): boolean;
 }
 export function binarySearch(array: number[], value: number): number;
+export function match(baseDir: string, fileName: string, patterns: string[] | string, options?: minimatch.Options): boolean;
 
 
 }
