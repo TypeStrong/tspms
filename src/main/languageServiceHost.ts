@@ -347,10 +347,12 @@ module LanguageServiceHost {
          * @param newContent the new script content
          */
         function updateContent(newContent: string): void {
-            content = newContent;
-            _lineStartIsDirty = true;
-            editRanges = [];
-            version++;
+            if (newContent !== content) {
+                content = newContent;
+                _lineStartIsDirty = true;
+                editRanges = [];
+                version++;
+            }
         }
 
 
@@ -412,8 +414,6 @@ module LanguageServiceHost {
             };
         }
 
-
-        
         
         return {
             getFileName: () => fileName,
@@ -422,12 +422,12 @@ module LanguageServiceHost {
             getIsOpen: () => isOpen,
             setIsOpen: val => isOpen = val,
             getEditRanges: () => editRanges,
-            getLineStarts: getLineStarts,
+            getLineStarts,
 
-            updateContent: updateContent,
-            editContent: editContent,
-            getPositionFromLine: getPositionFromLine,
-            getLineAndColForPositon: getLineAndColForPositon
+            updateContent,
+            editContent,
+            getPositionFromLine,
+            getLineAndColForPositon
         }
     }
     
