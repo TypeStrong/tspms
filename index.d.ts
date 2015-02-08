@@ -711,6 +711,7 @@ export type TextChange = {
     newText: string;
 };
 export function getFormattingEditsForFile(fileName: string, options: ts.FormatCodeOptions, start: number, end: number): promise.Promise<TextChange[]>;
+export function getFormattingEditsAfterKeyStroke(fileName: string, options: ts.FormatCodeOptions, position: number, key: string): promise.Promise<TextChange[]>;
 export function getEmitOutput(fileName: string): promise.Promise<ts.EmitOutput>;
 
 

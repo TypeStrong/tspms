@@ -110,11 +110,19 @@ export type TextSpan = {
     length: number;
 }
 
-function tsSpanToTextSpan(span : ts.TextSpan): TextSpan {
-    return {
-        start: span.start(),
-        length: span.length()
+function tsSpanToTextSpan(span : ts.TextSpan | { start: number; length: number; }): TextSpan {
+    var start: number;
+    var length: number;
+    
+    if (typeof span.start === 'function') {
+        start = (<ts.TextSpan>span).start();
+        length = (<ts.TextSpan>span).length();
+    } else {
+        start = (<TextSpan>span).start;
+        length = (<TextSpan>span).length
     }
+    
+    return { start, length };
 }
 
 
@@ -524,6 +532,26 @@ export function getFormattingEditsForFile(fileName: string, options: ts.FormatCo
                     newText: edit.newText
                 }))
         }
+        
+    });
+}
+
+
+
+//--------------------------------------------------------------------------
+//  getFormattingEditsForRange
+//--------------------------------------------------------------------------
+
+
+export function getFormattingEditsAfterKeyStroke(fileName: string, options: ts.FormatCodeOptions, position: number, key: string): promise.Promise<TextChange[]> {
+    return ProjectManager.getProjectForFile(fileName).then(project => {
+        var languageService = project.getLanguageService();
+        return languageService.getFormattingEditsAfterKeystroke(fileName, position, key, options)
+            .map(edit =>({
+                span: tsSpanToTextSpan(edit.span),
+                newText: edit.newText
+            }))
+        
         
     });
 }
