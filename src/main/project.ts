@@ -197,8 +197,8 @@ export function createProject(
                 }
             });
             
-            if (!_config.compilationSettings.noLib && !projectFilesSet[typeScriptInfo.libLocation]) {
-                promises.push(addFile(typeScriptInfo.libLocation));
+            if (!_config.compilationSettings.noLib && !projectFilesSet[typeScriptInfo.defaultLibFileName]) {
+                promises.push(addFile(typeScriptInfo.defaultLibFileName));
             }
             
             return promise.Promise.all(promises);
@@ -448,10 +448,10 @@ export function createProject(
             })
             .then(info =>  {
                 typeScriptInfo = info;
-                languageServiceHost = LanguageServiceHost.create(baseDirectory, typeScriptInfo.libLocation);
+                languageServiceHost = LanguageServiceHost.create(baseDirectory, typeScriptInfo.defaultLibFileName);
                 languageServiceHost.setCompilationSettings(utils.clone(_config.compilationSettings));
                 languageService = 
-                    typeScriptInfo.typeScript.createLanguageService(languageServiceHost, info.documentRegistry);
+                    typeScriptInfo.ts.createLanguageService(languageServiceHost, info.documentRegistry);
 
                 return collectFiles().then(updateWorkingSet);
             })
@@ -470,7 +470,7 @@ export function createProject(
         languageService.cleanupSemanticCache();
         
         if (!_config.compilationSettings.noLib && config.compilationSettings.noLib) {
-            removeFile(typeScriptInfo.libLocation);
+            removeFile(typeScriptInfo.defaultLibFileName);
         }
         
         var pojectSources = Object.keys(projectFilesSet).filter(fileName => isProjectSourceFile(fileName));

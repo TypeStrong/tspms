@@ -163,7 +163,10 @@ export function init(config: ProjectManagerConfig): promise.Promise<void> {
  * dispose the project manager
  */
 export function dispose(): void {
-    queue.then(() => disposeProjects());
+    queue.then(() => {
+        disposeProjects();
+        compilerManager.dispose();
+    });
 }
 
 /**
