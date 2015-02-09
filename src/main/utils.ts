@@ -2,7 +2,7 @@
 
 import path                    = require('path');
 import minimatch               = require('minimatch');
-
+import crypto                  = require('crypto');
 import project                 = require('./project');
 import promise                 = require('./promise');
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
@@ -337,3 +337,11 @@ export function match(baseDir: string, fileName: string, patterns: string[] | st
     return result;
 }
 
+/**
+ * get a hash of the typescript compiler
+ */
+export function getHash(content: string): string {
+    var shasum = crypto.createHash('sha1');
+    shasum.update(content, 'utf8');
+    return shasum.digest('hex').toString();
+}

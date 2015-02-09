@@ -1,17 +1,19 @@
-import crypto = require('crypto');
 import ts = require('typescript');
 import fs = require('./fileSystem');
 import promise = require('./promise');
 import path = require('path');
 import console = require('./logger');
+import utils = require('./utils');
 
-function getHash(content: string): string {
-    var shasum = crypto.createHash('sha1');
-    shasum.update(content, 'utf8');
-    return shasum.digest('hex').toString();
-}
+/**
+ * This module manage the different compiler used by tsps
+ * You can retrie
+ */
 
 
+/**
+ * Represent a  
+ */
 export type TypeScriptInfo = {
     path : string;
     typeScript: typeof ts;
@@ -44,7 +46,6 @@ export function init(fs: fs.IFileSystem, libLocation: string) {
 }
 
 
-
 export function getDefaultTypeScriptInfo(): TypeScriptInfo {
     return defaultTypeScriptInfo;
 }
@@ -66,7 +67,7 @@ function createCompiler(typescriptPath: string,  code: string, libFile: string):
     };
     
     typeScriptInfoMetas[typescriptPath] = {
-        hash: getHash(code),
+        hash: utils.getHash(code),
         count: 1
     }
     return typeScriptInfos[typescriptPath];
@@ -74,25 +75,20 @@ function createCompiler(typescriptPath: string,  code: string, libFile: string):
 
 
 export function acquireCompiler(typescriptPath: string): promise.Promise<TypeScriptInfo>  {
-    return promise.Promise.resolve() 
-        .then(() => {
+    var typescriptServicesFile = path.join(typescriptPath, 'bin', 'typescriptServices.js');
+    var libFile = path.join(typescriptPath, 'bin', 'lib.d.ts');
 
-            var typescriptServicesFile = path.join(typescriptPath, 'bin', 'typescriptServices.js');
-            var libFile = path.join(typescriptPath, 'bin', 'lib.d.ts');
+    return fileSystem.readFile(typescriptServicesFile).then(code => { 
+        var meta = typeScriptInfoMetas[typescriptPath];
+        var info = typeScriptInfos[typescriptPath];
 
-
-            return fileSystem.readFile(typescriptServicesFile).then(code => { 
-                var meta = typeScriptInfoMetas[typescriptPath];
-                var info = typeScriptInfos[typescriptPath];
-                
-                if (info && meta.hash === getHash(code)) {
-                    meta.count++;
-                    return info;
-                } else {
-                    return createCompiler(typescriptPath, code, libFile);
-                }
-            })
-        })
+        if (info && meta.hash === utils.getHash(code)) {
+            meta.count++;
+            return info;
+        } else {
+            return createCompiler(typescriptPath, code, libFile);
+        }
+    });
 }
 
 
