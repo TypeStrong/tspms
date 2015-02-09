@@ -1,106 +1,209 @@
+'use strict';
+
 import ts = require('typescript');
 import fs = require('./fileSystem');
 import promise = require('./promise');
 import path = require('path');
-import console = require('./logger');
 import utils = require('./utils');
 
 /**
- * This module manage the different compiler used by tsps
- * You can retrie
+ * @module CompilerManager
+ * 
+ * This module manage the different compiler version used
+ * by the services, for a given path it will `instanciate` 
+ * a `ts` module for a given compiler and release it when 
+ * no project use it anymore
  */
 
+
+//--------------------------------------------------------------------------
+//
+//  Type Definitions
+//
+//--------------------------------------------------------------------------
 
 /**
- * Represent a  
+ * Informations used by project to use a given version of the typescript compiler
  */
 export type TypeScriptInfo = {
-    path : string;
-    typeScript: typeof ts;
-    libLocation: string;
+    /**
+     * Absolute path of the compiler directory
+     */
+    compilerDirectory: string;
+    
+    /**
+     * compiler `ts` module instance 
+     */
+    ts: typeof ts;
+    
+    /**
+     * absolute filename of the `lib.d.ts` file associated with the compiler 
+     */
+    defaultLibFileName: string;
+    
+    /**
+     * TypeScript DocumentRegistry shared by projects using the same version of the compiler
+     */
     documentRegistry: ts.DocumentRegistry;
 }
 
-type TypeScriptInfoMeta = {
+/**
+ * Meta informations used for management of the different compiler instance
+ */
+type TypeScriptMeta = {
+    /**
+     * sha-sum of the typeScriptServices file associated to the compiler
+     * Used to check if a compiler file has changed between 2 acquires
+     */
     hash: string;
+    
+    /**
+     * counter increased each times a project
+     */
     count: number;
 }
 
 
-var typeScriptInfos: { [path: string]: TypeScriptInfo } = Object.create(null);
-var typeScriptInfoMetas: { [path: string]: TypeScriptInfoMeta } = Object.create(null);
+//--------------------------------------------------------------------------
+//
+//  Internal API
+//
+//--------------------------------------------------------------------------
+
+/**
+ * @private
+ * A map compilerDirectory => TypeScriptInfo
+ */
+var typeScriptInfos: { [fileName: string]: TypeScriptInfo } = Object.create(null);
+
+/** 
+ * @private
+ * A map compilerDirectory => TypeScriptInfo
+ */
+var typeScriptInfoMetas: { [fileName: string]: TypeScriptMeta } = Object.create(null);
+
+/**
+ * the fileSystem used by the compiler manager
+ */
 var fileSystem: fs.IFileSystem;
+
+/**
+ * @private
+ * information related to the `default` compiler bundled with the service
+ */
 var defaultTypeScriptInfo: TypeScriptInfo;
 
-export function init(fs: fs.IFileSystem, libLocation: string) {
-    fileSystem = fs;
-    typeScriptInfos = Object.create(null);
-    typeScriptInfoMetas = Object.create(null);
-    defaultTypeScriptInfo = {
-        id: 'default',
-        path: libLocation,
-        typeScript: ts,
-        libLocation: libLocation,
-        documentRegistry: ts.createDocumentRegistry()
-    };
-}
 
 
-export function getDefaultTypeScriptInfo(): TypeScriptInfo {
-    return defaultTypeScriptInfo;
-}
-
-
-function createCompiler(typescriptPath: string,  code: string, libFile: string): TypeScriptInfo {
-    var func = new Function(code + ';return ts;'),
-        generatedTs: typeof ts = func();
+/**
+ * For a give typescript compiler directory path create TypeScriptInfo
+ * 
+ * @param compilerDirectory compiler directory
+ * @param content content of the `typescriptServices.js` file associated to the compiler
+ * @param defaultLibFileName absolute fileName of the `lib.d.ts` file associated to the compiler 
+ * @param hash sha-sum of the `typescriptServices.js` file associated to the compiler
+ */
+function createCompiler(compilerDirectory: string, content: string, defaultLibFileName: string, hash: string): TypeScriptInfo {
+    var generatedTs: typeof ts = (new Function(content + ';return ts;'))();
 
     if (!generatedTs) {
         throw new Error('Invalid typescript file')
     }
 
-    typeScriptInfos[typescriptPath] =  {
-        typeScript: generatedTs,
-        path: typescriptPath,
-        libLocation: libFile,
+    typeScriptInfos[compilerDirectory] = {
+        compilerDirectory,
+        ts: generatedTs,
+        defaultLibFileName,
         documentRegistry: generatedTs.createDocumentRegistry()
     };
-    
-    typeScriptInfoMetas[typescriptPath] = {
-        hash: utils.getHash(code),
+
+    typeScriptInfoMetas[compilerDirectory] = {
+        hash: hash,
         count: 1
     }
-    return typeScriptInfos[typescriptPath];
+
+    Object.freeze(typeScriptInfos[compilerDirectory]);
+    return typeScriptInfos[compilerDirectory];
 }
 
+//--------------------------------------------------------------------------
+//
+//  Public API
+//
+//--------------------------------------------------------------------------
 
-export function acquireCompiler(typescriptPath: string): promise.Promise<TypeScriptInfo>  {
-    var typescriptServicesFile = path.join(typescriptPath, 'bin', 'typescriptServices.js');
-    var libFile = path.join(typescriptPath, 'bin', 'lib.d.ts');
+/**
+ * Initialialize the CompilerManager module.
+ * 
+ * @param fs the fileSystem the compilerManager
+ */
+export function init(fs: fs.IFileSystem, defaultLibFileName: string) {
+    fileSystem = fs;
+    typeScriptInfos = Object.create(null);
+    typeScriptInfoMetas = Object.create(null);
+    defaultTypeScriptInfo = {
+        compilerDirectory: '',
+        ts,
+        defaultLibFileName,
+        documentRegistry: ts.createDocumentRegistry()
+    };
 
-    return fileSystem.readFile(typescriptServicesFile).then(code => { 
-        var meta = typeScriptInfoMetas[typescriptPath];
-        var info = typeScriptInfos[typescriptPath];
+    Object.freeze(defaultTypeScriptInfo);
+}
 
-        if (info && meta.hash === utils.getHash(code)) {
+/**
+ * Retrieve information related to the `default` compiler bundled with the service.
+ */
+export function getDefaultTypeScriptInfo(): TypeScriptInfo {
+    return defaultTypeScriptInfo;
+}
+
+/**
+ * Acquire typescript information for the given path.
+ * 
+ * @param compilerDirectory the directory of the compiler
+ */
+export function acquireCompiler(compilerDirectory: string): promise.Promise<TypeScriptInfo> {
+    var typescriptServicesFileName = path.join(compilerDirectory, 'bin', 'typescriptServices.js');
+    var defaultLibFileName = path.join(compilerDirectory, 'bin', 'lib.d.ts');
+
+    return fileSystem.readFile(typescriptServicesFileName).then(content => {
+        var meta = typeScriptInfoMetas[compilerDirectory];
+        var info = typeScriptInfos[compilerDirectory];
+        var hash = utils.getHash(content);
+
+        if (info && meta.hash === hash) {
             meta.count++;
             return info;
         } else {
-            return createCompiler(typescriptPath, code, libFile);
+            return createCompiler(compilerDirectory, content, defaultLibFileName, hash);
         }
     });
 }
 
-
+/**
+ * Release typescriptInfo acquired through this manager.
+ * 
+ * @param typeScriptInfo the `TypeScriptInfo` object acquired throuh this manager
+ */
 export function releaseCompiler(typeScriptInfo: TypeScriptInfo): void {
-    var cached = typeScriptInfos[typeScriptInfo.path];
-    var meta = typeScriptInfoMetas[typeScriptInfo.path];
+    var cached = typeScriptInfos[typeScriptInfo.compilerDirectory];
     if (cached === typeScriptInfo) {
+        var meta = typeScriptInfoMetas[typeScriptInfo.compilerDirectory];
         meta.count--;
         if (meta.count === 0) {
-            delete typeScriptInfos[typeScriptInfo.path];
-            delete typeScriptInfoMetas[typeScriptInfo.path];
+            delete typeScriptInfos[typeScriptInfo.compilerDirectory];
+            delete typeScriptInfoMetas[typeScriptInfo.compilerDirectory];
         }
     }
 }
 
+/**
+ * Dispose the CompilerManager module.
+ */
+export function dispose() {
+    typeScriptInfos = Object.create(null);
+    typeScriptInfoMetas = Object.create(null);
+    defaultTypeScriptInfo = null;
+    fileSystem = null;
+}
