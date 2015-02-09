@@ -1,22 +1,15 @@
 'use strict';
 
-import ts           = require('typescript');
-import path         = require('path');
-import promise      = require('./promise');
-
-
-import fs           = require('./fileSystem');
-import ws           = require('./workingSet');
-
-import utils        = require('./utils');
-import console      = require('./logger');
-
-
-
-
-import LanguageServiceHost      = require('./languageServiceHost');
-import compilerManager = require('./compilerManager');
-import TypeScriptInfo = compilerManager.TypeScriptInfo;
+import ts                   = require('typescript');
+import path                 = require('path');
+import promise              = require('./promise');
+import fs                   = require('./fileSystem');
+import ws                   = require('./workingSet');
+import utils                = require('./utils');
+import console              = require('./logger');
+import LanguageServiceHost  = require('./languageServiceHost');
+import compilerManager      = require('./compilerManager');
+import TypeScriptInfo       = compilerManager.TypeScriptInfo;
 
 //--------------------------------------------------------------------------
 //
@@ -29,15 +22,11 @@ import TypeScriptInfo = compilerManager.TypeScriptInfo;
  */
 export type TypeScriptProjectConfig = {
     
-    //---------------------------------------------
-    //  Brackets-Typescript Specific settings
-    //---------------------------------------------
-    
     /**
      * Array of minimatch pattern string representing 
      * sources of a project
      */
-    sources: string[];
+    sources: string[] | string;
     
     /**
      * Compiltation settings
