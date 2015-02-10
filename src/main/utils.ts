@@ -282,7 +282,7 @@ export function clone<T>(target: T): T {
 /**
  * A recursive array
  */
-interface RecursiveArray<T> extends Array<T | RecursiveArray<T>> { }
+export interface RecursiveArray<T> extends Array<T | RecursiveArray<T>> { }
 
 /**
  * flatten a recursive array
