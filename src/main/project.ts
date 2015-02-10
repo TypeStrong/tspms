@@ -524,7 +524,7 @@ export function createProject(
      */
     function getProjectFileKind(fileName: string): ProjectFileKind {
         return !!projectFilesSet[fileName] ?
-            (isProjectSourceFile(fileName) ?   ProjectFileKind.SOURCE : ProjectFileKind.REFERENCE) :
+            (isProjectSourceFile(fileName) ? ProjectFileKind.SOURCE : ProjectFileKind.REFERENCE) :
             ProjectFileKind.NONE;
     }
   

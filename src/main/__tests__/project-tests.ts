@@ -628,21 +628,21 @@ describe('project test', function () {
         });
 
 
-        xit('should reinitialize the project if compilerDirectory has changed', function () {
-            var spy = spyOn(typeScriptProject, 'init').andCallThrough();
-            expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/src/file2.ts')).toBeFalsy();
+        it('should reinitialize the project if compilerDirectory has changed', function () {
+            var spy = spyOn(fileSystemMock, 'getProjectFiles').andCallThrough();
 
             updateProject({
                 compilationSettings: {
                     target: ts.ScriptTarget.ES3
                 },
-                compilerDirectory: 'typescript',
                 sources: [
-                    'src/file2.ts'
+                    'src/file1.ts'
                 ]
             });
+            
+            jest.runAllTimers();
 
-            expect(spy).toBeCalled();
+            expect(spy).toHaveBeenCalled();
         });
 
     });

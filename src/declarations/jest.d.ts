@@ -67,6 +67,7 @@ declare module jest {
         toBeGreaterThen(expected: number): boolean;
         toBeLessThen(expected: number): boolean;
         toBeCalled(): boolean;
+        toHaveBeenCalled(): boolean;
         toBeCalledWith(...args: any[]): boolean;
         lastCalledWith(...args: any[]): boolean;
     }
