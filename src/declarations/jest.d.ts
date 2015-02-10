@@ -16,6 +16,8 @@ declare function expect(actual: any): jest.Matchers;
 
 declare function spyOn(object: any, method: string): jest.Spy;
 
+declare function waitsFor(latchMethod: () => boolean, failureMessage?: string, timeout?: number): void;
+
 declare module jest {
     
      interface Spy {
