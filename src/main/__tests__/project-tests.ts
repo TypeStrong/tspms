@@ -13,24 +13,11 @@ import WorkingSetMock = require('./workingSetMock');
 import project = require('../project');
 import utils = require('../utils');
 import TypeScriptProject = project.TypeScriptProject;
-import compilerManager = require('../compilerManager');
-
+import CompilerManager = require('../compilerManager');
 
 interface Config {
-    /**
-     * Array of minimatch pattern string representing 
-     * sources of a project
-     */
     sources: string[];
-    
-    /**
-     * Compiltation settings
-     */
     compilationSettings?: ts.CompilerOptions;
-        
-    /**
-     * Path to an alternative typescriptCompiler
-     */
     compilerDirectory?: string;
 }
 
@@ -47,15 +34,13 @@ describe('project test', function () {
         noLib: false
     }
     
-    
     function createProject(baseDir: string, config: Config, init = true) {
-        compilerManager.init(fileSystemMock, defaultLibLocation);
+        CompilerManager.init(fileSystemMock, defaultLibLocation);
         var projectConfig = {
             sources: config.sources,
             compilerOptions: utils.assign({}, defaultCompilerOptions, config.compilationSettings || {}),
             compilerDirectory: config.compilerDirectory
         }
-        
         
         typeScriptProject = project.createProject(
             baseDir,
@@ -80,17 +65,13 @@ describe('project test', function () {
         });
     }
 
-
     function getProjectFileContent(fileName: string) {
-        var snapshot = typeScriptProject.getLanguageServiceHost().getScriptSnapshot(fileName);
-        return snapshot.getText(0, snapshot.getLength());
+        return typeScriptProject.getLanguageServiceHost().getScriptContent(fileName);
     }
     
     function getProjectFiles() {
         return Object.keys(typeScriptProject.getProjectFilesSet());
     }
-    
-    
     
     beforeEach(function () {
         fileSystemMock = new FileSystemMock(),
@@ -106,7 +87,6 @@ describe('project test', function () {
     });
     
     describe('initialization', function () {
-
 
         it('should collect every files in the file system corresponding to the \'sources\' section of the given config', function () {
             fileSystemMock.setFiles({
@@ -211,7 +191,6 @@ describe('project test', function () {
         });
     });
     
-    
     describe('filesystem change handling', function () {
 
         it('should collect referenced files from file added ', function () {
@@ -235,7 +214,6 @@ describe('project test', function () {
                 '/other/file3.ts',
                 '/other/file5.ts'
             ]);
-
         });
 
         it('should collect files added if they are referenced by another file ', function () {
@@ -295,11 +273,8 @@ describe('project test', function () {
             fileSystemMock.removeFile('/src/file1.ts');
             jest.runAllTimers();
 
-            expectToBeEqualArray(getProjectFiles(), [
-                '/src/file2.ts'
-            ]);
+            expectToBeEqualArray(getProjectFiles(), [ '/src/file2.ts'  ]);
         });
-
 
         it('should remove referenced files from the project when a source file referencing it is deleted, ' +
             'only if it is not referenced by another file', function () {
@@ -324,7 +299,6 @@ describe('project test', function () {
                 ]);
             });
 
-
         it('should remove a referenced files from the project when deleted', function () {
             fileSystemMock.setFiles({
                 '/src/file1.ts': 'import test = require("../other/file3")',
@@ -346,7 +320,6 @@ describe('project test', function () {
                 '/src/file2.ts'
             ]);
         });
-
 
         it('recollect a referenced files from the project when deleted then readded', function () {
             fileSystemMock.setFiles({
@@ -373,7 +346,6 @@ describe('project test', function () {
             ]);
         });
 
-
         it('should update project files when they change', function () {
             fileSystemMock.setFiles({
                 '/src/file1.ts': ''
@@ -390,7 +362,6 @@ describe('project test', function () {
 
             expect(getProjectFileContent('/src/file1.ts')).toBe('hello');
         });
-        
         
         it('should collect a file reference when a file change', function () {
             fileSystemMock.setFiles({
@@ -459,11 +430,6 @@ describe('project test', function () {
         });
         
     });
-
-
-    
-
-
 
     describe('project update update', function () {
         beforeEach(function () {
@@ -663,7 +629,6 @@ describe('project test', function () {
             expect(typeScriptProject.getProjectFileKind('/src/file1.ts')).toBe(project.ProjectFileKind.SOURCE);
         });
 
-
         it('should return \'REFERENCE\' if the file is a referenced file', function () {
             fileSystemMock.setFiles({
                 '/src/file1.ts': '///<reference path="../other/file2.ts"/>',
@@ -700,7 +665,6 @@ describe('project test', function () {
 
     });
 
-
     describe('working set handling', function () {
         beforeEach(function () {
             fileSystemMock.setFiles({
@@ -724,7 +688,6 @@ describe('project test', function () {
             jest.runAllTimers();
         });
 
-
         it('should mark as \'open\' every file of the working set', function () {
             testWorkingSetOpenCorrespondance();
         });
@@ -742,10 +705,7 @@ describe('project test', function () {
 
             testWorkingSetOpenCorrespondance();
         });
-
     });
-
-
 
     describe('file edition', function () {
         beforeEach(function () {
@@ -763,7 +723,6 @@ describe('project test', function () {
                 ]
             });
         });
-
 
         it('should edit a script when a document corresponding to a project file\'s is edited', function () {
             workingSetMock.documentEdited.dispatch({

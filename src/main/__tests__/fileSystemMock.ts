@@ -11,7 +11,6 @@ class FileSystem implements fs.IFileSystem {
         private files: { [fileName: string]: string } = {}
     ) {}
     
-    
     getProjectRoot() {
         return Promise.resolve('/');
     }
@@ -78,12 +77,9 @@ class FileSystem implements fs.IFileSystem {
         }]);
     }
     
-    
     dispose(): void {
         this.projectFilesChanged.clear();
     }
 }
-
-
 
 export = FileSystem;

@@ -35,7 +35,6 @@ describe('LanguageServiceHost', function () {
             expect(languageServiceHost.getScriptFileNames()).toEqual([]);
         });
         
-        
         it('should allows to update script content', function () {
             languageServiceHost.addScript('file1.ts', 'hello world');
             languageServiceHost.updateScript('file1.ts', 'foo bar');
@@ -49,7 +48,6 @@ describe('LanguageServiceHost', function () {
                 languageServiceHost.updateScript('file1.ts', 'hello world');
             }).toThrow();
         });
-        
         
         it('should allows to mark a script as \'open\'', function () {
             languageServiceHost.addScript('file1.ts', 'hello world');
@@ -99,29 +97,11 @@ describe('LanguageServiceHost', function () {
         });
         
         
-        
-        
-//        it('should provide basic file system functions', function () {
-//            
-//            languageServiceHost.addScript('dir1/file1.ts', 'hello world');
-//            expect(languageServiceHost.fileExists('dir1/file1.ts')).toBe(true);
-//            expect(languageServiceHost.fileExists('file1.ts')).toBe(false);
-//            
-//            expect(languageServiceHost.directoryExists('anyDirectory')).toBe(true);
-//            expect(languageServiceHost.resolveRelativePath('../file1.ts', '/dir1/dir2/')).toBe('/dir1/file1.ts');
-//            expect(languageServiceHost.getParentDirectory('/dir1/file1.ts')).toBe('/dir1');
-//        
-//        });
-        
-        
-        
         it('should provide default value when there is no script', function () {
             expect(languageServiceHost.getScriptSnapshot('file1.ts')).toBeNull();
             expect(languageServiceHost.getScriptVersion('file1.ts')).toBe('0');
             expect(languageServiceHost.getScriptIsOpen('file1.ts')).toBe(false);
         });
-        
-       
         
     });
 });

@@ -15,10 +15,6 @@ import ts = require('typescript');
  type ProjectConfig = {
     sources?: string[];
     compilationSettings?: ts.CompilerOptions;
-
-    /**
-     * Path to an alternative typescriptCompiler
-     */
     compilerDirectory?: string;
 } 
 
@@ -30,9 +26,6 @@ describe('TypeScriptProjectManager', function () {
             dispose: jest.Mock<void>;
         },
         createProjectMock = <jest.Mock<any>>TypeScriptProject.createProject
-    
-    
-   
     
     function initiProjectManager(
         projectConfigs: { [projectId: string]: ProjectConfig; },
@@ -64,7 +57,6 @@ describe('TypeScriptProjectManager', function () {
         createProjectMock.mockReturnValue(projectSpy);
     });
             
-    
     afterEach(function () {
         projectManager.dispose();
         createProjectMock.mockClear();
@@ -83,9 +75,6 @@ describe('TypeScriptProjectManager', function () {
             expect(createProjectMock.mock.calls.length).toBe(2);
         });
 
-       
-        
-        
         it('should dispose all registred project when disposed', function () {
 
 
@@ -100,8 +89,6 @@ describe('TypeScriptProjectManager', function () {
     
     describe('updateProjectConfigs', function () {
         it('should dispose projects that have no more config when config changes', function () {
-
-         
             initiProjectManager({
                 project1: {},
                 project2: {}
@@ -119,10 +106,7 @@ describe('TypeScriptProjectManager', function () {
             expect(projectSpy.dispose.mock.calls.length).toBe(1); 
         });
         
-        
         it('should create projects that have been added in the config', function () {
-
-         
             initiProjectManager({
                 project1: {},
                 project2: {}
@@ -138,10 +122,7 @@ describe('TypeScriptProjectManager', function () {
             expect(createProjectMock.mock.calls.length).toBe(3);
         });
         
-        
         it('should update other projects', function () {
-
-         
             initiProjectManager({
                 project1: {},
                 project2: {}
@@ -156,11 +137,7 @@ describe('TypeScriptProjectManager', function () {
             jest.runAllTimers();
             expect(projectSpy.update.mock.calls.length).toBe(2); 
         });
-        
-        
     });
-    
-    
     
     describe('getProjectForFiles', function () { 
         beforeEach(function () {
@@ -195,9 +172,6 @@ describe('TypeScriptProjectManager', function () {
                 });
                 return project;
             });
-            
-            
-
             
             initiProjectManager({
                 project1: {

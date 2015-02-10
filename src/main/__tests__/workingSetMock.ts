@@ -22,7 +22,6 @@ class WorkingSetMock implements ws.IWorkingSet {
         });
     }
     
-    
     removeFiles(paths: string[]) {
         this.files = this.files.filter(path => paths.indexOf(path) === -1);
         this.workingSetChanged.dispatch({
