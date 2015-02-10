@@ -279,33 +279,6 @@ export function clone<T>(target: T): T {
     return assign(Array.isArray(target) ? [] : {}, target);
 }
 
-/**
- * Execute a binary search in an array of number.
- * 
- * @param array the array of number.
- * @param value the value searched.
- */
-export function binarySearch(array: number[], value: number): number {
-    var low = 0;
-    var high = array.length - 1;
-
-    while (low <= high) {
-        var middle = low + ((high - low) >> 1);
-        var midValue = array[middle];
-
-        if (midValue === value) {
-            return middle;
-        }
-        else if (midValue > value) {
-            high = middle - 1;
-        }
-        else {
-            low = middle + 1;
-        }
-    }
-
-    return ~low;
-}
 
 //--------------------------------------------------------------------------
 //
