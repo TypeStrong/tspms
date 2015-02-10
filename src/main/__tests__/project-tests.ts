@@ -189,6 +189,41 @@ describe('project test', function () {
 
             expect(typeScriptProject.getProjectFilesSet().hasOwnProperty(defaultLibLocation)).toBeFalsy();
         });
+        
+        
+        it('should re init the project if the `typeScriptServices.js` file has changed', function () {
+
+            fileSystemMock.setFiles({
+                '/typescript/bin/typescriptServices.js' : 
+                    'var ts = { ' +
+                    '  createLanguageService: function () {  return { id:\'hello\', dispose : function () {}} },' +
+                    '  createDocumentRegistry: function () {  return { } }' +
+                    '}' ,
+                
+                '/lib.d.ts': ''
+            });
+
+            createProject('/', {
+                sources: [
+                    'src/**/*ts'
+                ],
+                compilerDirectory: '/typescript'
+            });
+
+            jest.runAllTimers();
+            
+            fileSystemMock.updateFile(
+                '/typescript/bin/typescriptServices.js',
+                'var ts = { ' +
+                '  createLanguageService: function () {  return { id:\'newFake\', dispose : function () {}} },' +
+                '  createDocumentRegistry: function () {  return { } }' +
+                '}' 
+            )
+            
+            jest.runAllTimers();
+
+            expect((<any>typeScriptProject.getLanguageService()).id).toBe('newFake');
+        });
     });
     
     describe('filesystem change handling', function () {
@@ -405,7 +440,7 @@ describe('project test', function () {
             ]);
         });
         
-        it('should create a new typescript factory instance if a typescript path is specified', function () {
+        it('should acquire a new typescript instance if a typescript path is specified', function () {
 
             fileSystemMock.setFiles({
                 '/typescript/bin/typescriptServices.js' : 

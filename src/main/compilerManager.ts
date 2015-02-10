@@ -26,15 +26,21 @@ import Map = utils.Map;
  * Informations used by project to use a given version of the typescript compiler
  */
 export type TypeScriptInfo = {
+        
+    /**
+     * compiler `ts` module instance 
+     */
+    ts: typeof ts;
+    
     /**
      * Absolute path of the compiler directory
      */
     compilerDirectory: string;
     
     /**
-     * compiler `ts` module instance 
+     * The name of the `typescriptServices.js` file associated to the compiler
      */
-    ts: typeof ts;
+    servicesFileName: string;
     
     /**
      * absolute filename of the `lib.d.ts` file associated with the compiler 
@@ -100,7 +106,13 @@ var defaultTypeScriptInfo: TypeScriptInfo;
  * @param defaultLibFileName absolute fileName of the `lib.d.ts` file associated to the compiler 
  * @param hash sha-sum of the `typescriptServices.js` file associated to the compiler
  */
-function createCompiler(compilerDirectory: string, content: string, defaultLibFileName: string, hash: string): TypeScriptInfo {
+function createCompiler(
+    compilerDirectory: string, 
+    content: string, 
+    defaultLibFileName: string, 
+    servicesFileName: string, 
+    hash: string): TypeScriptInfo {
+    
     var generatedTs: typeof ts = (new Function(content + ';return ts;'))();
 
     if (!generatedTs) {
@@ -109,6 +121,7 @@ function createCompiler(compilerDirectory: string, content: string, defaultLibFi
 
     typeScriptInfos[compilerDirectory] = {
         compilerDirectory,
+        servicesFileName, 
         ts: generatedTs,
         defaultLibFileName,
         documentRegistry: generatedTs.createDocumentRegistry()
@@ -139,7 +152,8 @@ export function init(fs: fs.IFileSystem, defaultLibFileName: string) {
     typeScriptInfos = Object.create(null);
     typeScriptMetas = Object.create(null);
     defaultTypeScriptInfo = {
-        compilerDirectory: '',
+        compilerDirectory: '<bundled-compiler-dir>',
+        servicesFileName: '<bundled-serviceFile>',
         ts,
         defaultLibFileName,
         documentRegistry: ts.createDocumentRegistry()
@@ -161,10 +175,10 @@ export function getDefaultTypeScriptInfo(): TypeScriptInfo {
  * @param compilerDirectory the directory of the compiler
  */
 export function acquireCompiler(compilerDirectory: string): promise.Promise<TypeScriptInfo> {
-    var typescriptServicesFileName = path.join(compilerDirectory, 'bin', 'typescriptServices.js');
+    var servicesFileName = path.join(compilerDirectory, 'bin', 'typescriptServices.js');
     var defaultLibFileName = path.join(compilerDirectory, 'bin', 'lib.d.ts');
 
-    return fileSystem.readFile(typescriptServicesFileName).then(content => {
+    return fileSystem.readFile(servicesFileName).then(content => {
         var meta = typeScriptMetas[compilerDirectory];
         var info = typeScriptInfos[compilerDirectory];
         var hash = utils.getHash(content);
@@ -173,7 +187,7 @@ export function acquireCompiler(compilerDirectory: string): promise.Promise<Type
             meta.count++;
             return info;
         } else {
-            return createCompiler(compilerDirectory, content, defaultLibFileName, hash);
+            return createCompiler(compilerDirectory, content, defaultLibFileName, servicesFileName,  hash);
         }
     });
 }

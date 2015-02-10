@@ -30,7 +30,6 @@ describe('CompilerManager', function () {
             CompilerManager.init(fileSystemMock, '/lib.d.ts');
 
             var info = CompilerManager.getDefaultTypeScriptInfo();
-            expect(info.compilerDirectory).toBe('');
             expect(info.ts).toBe(ts);
             expect(info.defaultLibFileName).toBe('/lib.d.ts');
             expect(info.documentRegistry).toEqual({fake: true});

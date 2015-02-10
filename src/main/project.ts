@@ -368,6 +368,9 @@ export function createProject(
                     case fs.FileChangeKind.UPDATE:
                         if (projectFilesSet[record.fileName]) {
                             updateFile(record.fileName);
+                        } else if (record.fileName === typeScriptInfo.servicesFileName) {
+                            languageService.dispose();
+                            return init();
                         }
                         break;
                 }
@@ -476,6 +479,7 @@ export function createProject(
      */
     function update(config: TypeScriptProjectConfig): promise.Promise<void> {
         if (config.compilerDirectory !== _config.compilerDirectory) {
+            CompilerManager.releaseCompiler(typeScriptInfo);
             languageService.dispose();
             return init();
         }
