@@ -1,30 +1,57 @@
 'use strict';
 
-import path                    = require('path');
-import minimatch               = require('minimatch');
-import crypto                  = require('crypto');
-import project                 = require('./project');
-import promise                 = require('./promise');
+import path = require('path');
+import minimatch = require('minimatch');
+import crypto = require('crypto');
+import project = require('./project');
+import promise = require('./promise');
+
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 
+//--------------------------------------------------------------------------
+//
+//  PromiseQueue
+//
+//--------------------------------------------------------------------------
 
+/**
+ * Type of items in the queue.
+ */
 type PromiseQueueItem = promise.Promise<any> | (() => promise.Promise<any>) | (() => any);
 
-export interface PromiseQueue {
-    then<T>(callback: () => promise.Promise<T>): promise.Promise<T>;
-    then<T>(callback: () => T): promise.Promise<T>;
-    
-    
-    reset<T>(item: promise.Promise<T>): promise.Promise<T>;
-}
-
-interface Deferred {
+/**
+ * Deferred
+ */
+type Deferred = {
     resolve(t: any): void;
     reject(reaison: any): void;
 }
 
-export function createPromiseQueue(): PromiseQueue {
+/**
+ * A PromiseQueue, used to insure that async task are executed sequentially.
+ */
+export interface PromiseQueue {
+    /**
+     * Add a task to the Queue, return a promise that will be resolved 
+     * with the result of that task 
+     * 
+     * @param task the task to execute.
+     */
+    then<T>(task: () => promise.Promise<T> | T): promise.Promise<T>;
     
+    /**
+     * Reset/init the promise queue, once this methid is called all task in the 
+     * promise queue will be executed sequentially once the initiam promise is resolved.
+     * 
+     * @param init the inial async task of the queue.
+     */
+    reset<T>(init: promise.Promise<T>): promise.Promise<T>;
+}
+
+/**
+ * PromiseQueue factory.
+ */
+export function createPromiseQueue(): PromiseQueue {
     var idHelper = 1;
     var items: number[] = [];
     var itemsMap: {[index: number]: PromiseQueueItem} = {};
@@ -98,65 +125,21 @@ export function createPromiseQueue(): PromiseQueue {
     return { then, reset };
 } 
 
-
-
-
-export function mapValues<T>(map: { [index: string]: T }): T[] {
-    return Object.keys(map).reduce( (result: T[], key: string) => {
-        result.push(map[key]);
-        return result;
-    }, []);
-} 
+//--------------------------------------------------------------------------
+//
+//  Signal
+//
+//--------------------------------------------------------------------------
 
 /**
- * assign all properties of a list of object to an object
- * @param target the object that will receive properties
- * @param items items which properties will be assigned to a target
- */
-export function assign(target: any, ...items: any[]): any {
-    return items.reduce(function (target: any, source: any) {
-        return Object.keys(source).reduce((target: any, key: string) => {
-            target[key] = source[key];
-            return target;
-        }, target);
-    }, target);
-}
-
-/**
- * clone an object (shallow)
- * @param target the object to clone
- */
-export function clone<T>(target: T): T {
-    return assign(Array.isArray(target) ? [] : {}, target);
-}
-
-
-
-
-
-/**
- * browserify path.resolve is buggy on windows
- * @param from an ABSOLUTE path
- * @param to an relative path
- */
-export function pathResolve(from: string, to: string): string {
-    var result = path.resolve(from, to);
-    var index = result.indexOf(from[0]);
-    return result.slice(index);
-}
-
-
-
-/**
- * C# like events and delegates for typed events
- * dispatching
+ * C# like events and delegates for typed events dispatching.
  */
 export interface ISignal<T> {
     /**
      * Subscribes a listener for the signal.
      * 
-     * @params listener the callback to call when events are dispatched
-     * @params priority an optional priority for this signal
+     * @params listener the callback to call when events are dispatched.
+     * @params priority an optional priority for this listerner
      */
     add(listener: (parameter: T) => any, priority?: number): void;
     
@@ -168,41 +151,43 @@ export interface ISignal<T> {
     remove(listener: (parameter: T) => any): void;
     
     /**
-     * dispatch an event
+     * Dispatch an event.
      * 
-     * @params parameter the parameter attached to the event dispatching
+     * @params parameter the parameter attached to the event dispatched.
      */
     dispatch(parameter?: T): boolean;
     
     /**
-     * Remove all listener from the signal
+     * Remove all listener from the signal.
      */
     clear(): void;
     
     /**
-     * @return true if the listener has been subsribed to this signal
+     * Returns true if listener has been subsribed to this signal.
      */
     hasListeners(): boolean;
 }
 
-
+/**
+ * Reference ISignal implementation.
+ */
 export class Signal<T> implements ISignal<T> {
     
     /**
-     * list of listeners that have been suscribed to this signal
+     * list of listeners that have been suscribed to this signal.
      */
     private listeners: { (parameter: T): any }[] = [];
     
     /**
-     * Priorities corresponding to the listeners 
+     * Priorities corresponding to the listeners.
      */
     private priorities: number[] = [];
     
     /**
      * Subscribes a listener for the signal.
      * 
-     * @params listener the callback to call when events are dispatched
-     * @params priority an optional priority for this signal
+     * @params listener the callback to call when events are dispatched.
+     * @params priority an optional priority for this listener.
      */
     add(listener: (parameter: T) => any, priority = 0): void {
         var index = this.listeners.indexOf(listener);
@@ -222,7 +207,7 @@ export class Signal<T> implements ISignal<T> {
     }
     
     /**
-     * unsubscribe a listener for the signal
+     * Unsubscribe a listener for the signal.
      * 
      * @params listener the previously subscribed listener
      */
@@ -235,9 +220,9 @@ export class Signal<T> implements ISignal<T> {
     }
     
     /**
-     * dispatch an event
+     * Dispatches an event.
      * 
-     * @params parameter the parameter attached to the event dispatching
+     * @params parameter the parameter attached to the event dispatched.
      */
     dispatch(parameter?: T): boolean {
         var hasBeenCanceled = this.listeners.every((listener: (parameter: T) => any) =>  {
@@ -249,7 +234,7 @@ export class Signal<T> implements ISignal<T> {
     }
     
     /**
-     * Remove all listener from the signal
+     * Removes all listener from the signal.
      */
     clear(): void {
         this.listeners = [];
@@ -257,13 +242,49 @@ export class Signal<T> implements ISignal<T> {
     }
     
     /**
-     * @return true if the listener has been subsribed to this signal
+     * Returns true if the listener has been subsribed to this signal.
      */
     hasListeners(): boolean {
         return this.listeners.length > 0;
     }
 }
 
+//--------------------------------------------------------------------------
+//
+//  Object/Array utils
+//
+//--------------------------------------------------------------------------
+
+/**
+ * Assign all properties of a list of object to an object.
+ * 
+ * @param target the object that will receive properties.
+ * @param items objects which properties will be assigned to a target.
+ */
+export function assign(target: any, ...items: any[]): any {
+    return items.reduce(function (target: any, source: any) {
+        return Object.keys(source).reduce((target: any, key: string) => {
+            target[key] = source[key];
+            return target;
+        }, target);
+    }, target);
+}
+
+/**
+ * Clone an object (shallow).
+ * 
+ * @param target the object to clone
+ */
+export function clone<T>(target: T): T {
+    return assign(Array.isArray(target) ? [] : {}, target);
+}
+
+/**
+ * Execute a binary search in an array of number.
+ * 
+ * @param array the array of number.
+ * @param value the value searched.
+ */
 export function binarySearch(array: number[], value: number): number {
     var low = 0;
     var high = array.length - 1;
@@ -286,7 +307,29 @@ export function binarySearch(array: number[], value: number): number {
     return ~low;
 }
 
+//--------------------------------------------------------------------------
+//
+//  Path utils
+//
+//--------------------------------------------------------------------------
 
+/**
+ * Browserify path.resolve is buggy on windows.
+ * 
+ * @param from an absolute path.
+ * @param to an relative path.
+ */
+export function pathResolve(from: string, to: string): string {
+    var result = path.resolve(from, to);
+    var index = result.indexOf(from[0]);
+    return result.slice(index);
+}
+
+/**
+ * Returns true if the fileName is absolute.
+ * 
+ * @param fileName the file name.
+ */
 function isAbsolute(fileName: string): boolean {
     if (fileName.charAt(0) === "/" || fileName === "") {
         return true;    
@@ -303,11 +346,16 @@ function isAbsolute(fileName: string): boolean {
     return isAbsolute
 }
 
-
+/**
+ * Matching utils for path based on minimatch.
+ * 
+ * @param baseDir the absolute directory path where the match happens.
+ * @param fileName the absolute file name.
+ * @param patterns the patterns to match the file against.
+ * @param options minimatch options used for the match.
+ */
 export function match(baseDir: string, fileName: string, patterns: string[] | string, options?: minimatch.Options): boolean {
-    
     var arrayPatterns = typeof patterns === 'string' ? [patterns] : patterns;
-    fileName = path.resolve(baseDir, fileName);
     
     var result: boolean = false;
     for (var i = 0; i < arrayPatterns.length; i++) {
@@ -318,7 +366,7 @@ export function match(baseDir: string, fileName: string, patterns: string[] | st
         }
         
         if (!isAbsolute(pattern)) {
-            pattern = path.resolve(baseDir, pattern);
+            pattern = pathResolve(baseDir, pattern);
         }
         
         if (minimatch(fileName, pattern, options)) {
@@ -333,25 +381,50 @@ export function match(baseDir: string, fileName: string, patterns: string[] | st
 }
 
 /**
- * get a hash of the typescript compiler
+ * Get a sha1 hash of a string.
+ * 
+ * @param value the string to hash.
  */
-export function getHash(content: string): string {
+export function getHash(value: string): string {
     var shasum = crypto.createHash('sha1');
-    shasum.update(content, 'utf8');
+    shasum.update(value, 'utf8');
     return shasum.digest('hex').toString();
 }
 
+//--------------------------------------------------------------------------
+//
+//  Map and Set
+//
+//--------------------------------------------------------------------------
 
+/**
+ * Represent a Map, key are string.
+ */
 export interface Map<T> {
     [key: string]: T;
 }
 
+/**
+ * A basic string Set.
+ */
 export type Set = Map<boolean>;
 
+/**
+ * Retrieve values of a map as aray.
+ */
+export function getMapValues<T>(map: Map<T>): T[] {
+    return Object.keys(map).reduce( (result: T[], key: string) => {
+        result.push(map[key]);
+        return result;
+    }, []);
+} 
+
+/**
+ * convert an array of string to a string Set.
+ */
 export function arrayToSet(arr: string[]): Set {
     return arr.reduce((result: Set, key: string) => {
         result[key] = true;
         return result;
     }, Object.create(null));
 }
-

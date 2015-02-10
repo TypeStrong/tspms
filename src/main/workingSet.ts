@@ -1,11 +1,9 @@
 'use strict';
 
 import promise = require('./promise');
-
 import utils = require('./utils');
+
 import ISignal = utils.ISignal;
-
-
 
 //--------------------------------------------------------------------------
 //
@@ -14,25 +12,24 @@ import ISignal = utils.ISignal;
 //--------------------------------------------------------------------------
 
 /**
- * A service that will reflect files in the working set 
+ * A service that will reflect files in the working set of the editor.
  */
 export interface IWorkingSet {
     /**
-     * list of files in the working set
+     * The list of files open in the working set.
      */
     getFiles(): promise.Promise<string[]>;
     
     /**
-     * a signal dispatching events when change occured in the working set
+     * A signal dispatching events when change occured in the working set.
      */
     workingSetChanged: ISignal<WorkingSetChangeRecord>;
     
     /**
-     * a signal that provide fine grained change over edited document
+     * A signal that provide fine grained change descriptor over edited documents.
      */
     documentEdited: ISignal<DocumentChangeRecord>;
 }
-
 
 //--------------------------------------------------------------------------
 //
@@ -40,31 +37,35 @@ export interface IWorkingSet {
 //
 //--------------------------------------------------------------------------
 
-
 /**
- * describe change in the working set
+ * Describe a change in the working set.
  */
 export type WorkingSetChangeRecord = {
     /**
-     * kind of change that occured in the working set
+     * The kind of change that occured in the working set.
      */
     kind: WorkingSetChangeKind;
     
     /**
-     * list of paths that has been added or removed from the working set
+     * The list of paths that has been added or removed from the working set.
      */
-    paths: string[];
+    fileNames: string[];
 }
-
 
 /**
- * enum listing the change kind that occur in a working set
+ * An Enum listing the kind of change that might occur in the working set.
  */
 export const enum WorkingSetChangeKind {
+    /**
+     * A file has been added to the working set.
+     */
     ADD,
+    
+    /**
+     * A file has been removed from the working set.
+     */
     REMOVE
 }
-
 
 //--------------------------------------------------------------------------
 //
@@ -73,47 +74,51 @@ export const enum WorkingSetChangeKind {
 //--------------------------------------------------------------------------
 
 /**
- * describe a change in a document
+ * Describe a change in a document.
  */
 export type DocumentChangeDescriptor = {
     
     /**
-     * start position of the change
+     * Start position of the change.
      */
     from?: number;
     
     /**
-     * end positon of the change
+     * End positon of the change.
      */
     to?: number;
     
     /**
-     * text that has been inserted (if any)
+     * The text that has been inserted (if any).
      */
     text?: string;
     
     /**
-     * text that has been removed (if any)
+     * The text that has been removed (if any).
      */
     removed?: string;
-    
+
 }
 
 /**
- * describe a list of change in a document
+ * Describe a list of changes in a document.
+ * You can provided either a `changeList` containing a description of all edition in the document, 
+ * or documentText providing the new document text. 
+ * If  the first method is used (`changeList`) the compiler will be able to use incremental compilation.
  */
 export type DocumentChangeRecord = {
     /**
-     * path of the files that has changed
+     * absolute file name of the files that has changed.
      */
-    path: string;
+    fileName: string;
+    
     /**
-     * list of changes
+     * The list of changes that occured in the file.
      */
     changeList?: DocumentChangeDescriptor[];
     
     /**
-     * documentText
+     * The new text of the file.
      */
     documentText?: string
 }

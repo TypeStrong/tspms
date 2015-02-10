@@ -2,8 +2,8 @@
 
 import promise = require('./promise');
 import utils = require('./utils');
-import ISignal = utils.ISignal;
 
+import ISignal = utils.ISignal;
 
 //--------------------------------------------------------------------------
 //
@@ -12,34 +12,32 @@ import ISignal = utils.ISignal;
 //--------------------------------------------------------------------------
 
 /**
- * A simple wrapper over brackets filesystem that provide simple function and 
- * typed watcher
+ * Interface abstracting file system to provide adapter to the service.
  */
 export interface IFileSystem {
     
     /**
-     * return a promise resolving to the project root folder path
+     * Return a promise resolving to the project root folder path.
      */
     getProjectRoot(): promise.Promise<string>;
     
     /**
-     * a signal dispatching fine grained change reflecting the change that happens in the working set
+     * A signal dispatching change in files under the project root directory.
      */
     projectFilesChanged: ISignal<FileChangeRecord[]>;
     
     /**
-     * return a promise that resolve with an array of string containing all the files of the projects
+     * Return a promise that resolve to an array of string containing all the typescript files name in the projects.
      */
     getProjectFiles(): promise.Promise<string[]>;
     
     /**
-     * read a file, return a promise with that resolve to the file content
+     * Read a file, return a promise that resolve to the file content.
      * 
-     * @param path the file to read
+     * @param fileName the name of file to read.
      */
-    readFile(path: string): promise.Promise<string>;
+    readFile(fileName: string): promise.Promise<string>;
 }
-
 
 //--------------------------------------------------------------------------
 //
@@ -47,43 +45,42 @@ export interface IFileSystem {
 //
 //--------------------------------------------------------------------------
 
-
 /**
- * enum representing the kind change possible in the fileSysem
+ * An Enum representing the kind of change that migth occur in the fileSysem.
  */
 export const enum FileChangeKind {
     /**
-     * a file has been added
+     * A file has been added.
      */
     ADD,
     
     /**
-     * a file has been updated
+     * A file has been updated.
      */
     UPDATE,
     
     /**
-     * a file has been deleted
+     * A file has been deleted.
      */
     DELETE,
     
     /**
-     * the project files has been reset 
+     * The project files has been refreshed.
      */
     RESET
 }
 
 /**
- * FileSystem change descriptor
+ * FileSystem change descriptor.
  */
 export type FileChangeRecord = {
     /**
-     * kind of change
+     * kind of change.
      */
     kind: FileChangeKind;
     
     /**
-     * name of the file that have changed
+     * The name of the file that have changed if any.
      */
-    fileName: string;
+    fileName?: string;
 }

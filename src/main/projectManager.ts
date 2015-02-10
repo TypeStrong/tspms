@@ -1,100 +1,105 @@
 'use strict';
 
-import promise      = require('./promise');
+import promise = require('./promise');
 import path = require('path');
-
-
-import fs   = require('./fileSystem');
+import fs = require('./fileSystem');
 import ws = require('./workingSet');
 import ts = require('typescript');
-
 import project = require('./project');
+import utils = require('./utils');
+import console  = require('./logger');
+import compilerManager = require('./compilerManager');
+
 import ProjectFileKind = project.ProjectFileKind;
 import TypeScriptProject = project.TypeScriptProject;
 import createProject = project.createProject;
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
-
-import utils = require('./utils');
-import console  = require('./logger');
-import compilerManager = require('./compilerManager');
 import Map = utils.Map;
 
+/**
+ * @module ProjectManager
+ * 
+ * This module manage the different project of the services.
+ * This is the main entry point for creating/updating/deleting/retrieving projects.
+ */
 
+
+//--------------------------------------------------------------------------
+//
+//  Type Definitions
+//
+//--------------------------------------------------------------------------
 
 export type ProjectManagerConfig  = {
     /**
-     *  location of the default typescript compiler lib.d.ts file
+     * Absolute fileName of the `lib.d.ts` file associated to the bundled compiler.
      */
-    defaultTypeScriptLocation: string;
+    defaultLibFileName: string;
     
     /**
-     * editor filesystem manager
+     * The file system wrapper instance used by this module.
      */
     fileSystem: fs.IFileSystem;
     
     /**
-     * ditor workingset manager 
+     * Working set service.
      */
     workingSet: ws.IWorkingSet;
     
     /**
-     * projects configurations
+     * A Map project name to project configuration
      */
     projectConfigs: { [projectId: string]: TypeScriptProjectConfig; };
 }
 
-//-------------------------------
-//  variables
-//-------------------------------
-
+//--------------------------------------------------------------------------
+//
+//  Internal API
+//
+//--------------------------------------------------------------------------
 
 /**
- * editor filesystem manager
+ * The file system wrapper instance used by this module.
  */
 var fileSystem: fs.IFileSystem;
 
 /**
- * editor workingSet manager
+ * The working set service.
  */
 var workingSet: ws.IWorkingSet;
 
-
 /**
- * a map containing the projects 
+ * A Map project name to ProjectInstance
  */
 var projectMap: Map<TypeScriptProject> = Object.create(null);
 
 /**
- * tempory Project used for typescript file 
- * that correspond to no registred project
+ * Temp Project used for typescript file that are not managed by any registred project.
  */
 var tempProject: TypeScriptProject;
 
 /**
- * absolute path of the opened root directory 
+ * Absolute filename of the root directory.
  */
-var projectRootDir: string;
+var projectRoot: string;
 
 /**
- * a promise queue used to insure async task are run sequentialy
+ * A promise queue used to insure async task are run sequentialy.
  */
 var queue = utils.createPromiseQueue();
 
 /**
- * location of the default typescript compiler lib.d.ts file
+ * Absolute fileName of the `lib.d.ts` file associated to the bundled compiler.
  */
-var defaultTypeScriptLocation: string;
-
-
-var projectConfigs: Map<TypeScriptProjectConfig>;
-
-
-//-------------------------------
-//  Private 
-//------------------------------- 
+var defaultLibFileName: string;
 
 /**
- * create projects from project configs retrieved by the preferenceManager
+ * A Map project name to project configuration
+ */
+var projectConfigs: Map<TypeScriptProjectConfig>;
+
+/**
+ * Create projects from project configs in the projectConfigs Map.
  */
 function createProjects(): promise.Promise<any> {
     return promise.Promise.all(
@@ -104,7 +109,7 @@ function createProjects(): promise.Promise<any> {
 }
 
 /**
- * dispose every projects created by the ProjectManager
+ * Dispose every projects created by the ProjectManager module.
  */
 function disposeProjects(): void {
     Object.keys(projectMap).forEach(path => {
@@ -117,51 +122,50 @@ function disposeProjects(): void {
     }
 }
 
-
 /**
- * for given config and projectId create a project
+ * For given config and project name create a project.
  * 
- * @param projectId the id of the project
- * @param config the project config
+ * @param projectName the name of the project.
+ * @param config the project config.
  */
-function createProjectFromConfig(projectId: string, config: TypeScriptProjectConfig) {
-    var project = createProject(projectRootDir, config, fileSystem, workingSet);
+function createProjectFromConfig(projectName: string, config: TypeScriptProjectConfig) {
+    var project = createProject(projectRoot, config, fileSystem, workingSet);
     return project.init().then(() => {
-        projectMap[projectId] = project;
+        projectMap[projectName] = project;
     }, () => {
-        console.error('could not create project:' + projectId);
+        console.error('could not create project:' + projectName);
     });
 }
 
-
-//-------------------------------
-// Public 
-//------------------------------- 
+//--------------------------------------------------------------------------
+//
+//  Public API
+//
+//--------------------------------------------------------------------------
 
 /**
- * initialize the project manager
+ * Initialize the ProjectManager module.
  * 
  * @param config ProjectManager configuration
  */
 export function init(config: ProjectManagerConfig): promise.Promise<void> {
-
-    defaultTypeScriptLocation = config.defaultTypeScriptLocation;
+    defaultLibFileName = config.defaultLibFileName;
     workingSet = config.workingSet;
     fileSystem = config.fileSystem;
     projectConfigs = config.projectConfigs;
     
-    compilerManager.init(config.fileSystem, config.defaultTypeScriptLocation);
+    compilerManager.init(config.fileSystem, config.defaultLibFileName);
 
     
     return queue.reset(fileSystem.getProjectRoot().then(rootDir => {
-        projectRootDir = rootDir;
+        projectRoot = rootDir;
         return createProjects();
     }));
 }
 
 
 /**
- * dispose the project manager
+ * Dispose the ProjectManager module.
  */
 export function dispose(): void {
     queue.then(() => {
@@ -171,16 +175,18 @@ export function dispose(): void {
 }
 
 /**
- * this method will try to find a project referencing the given path
- * it will by priority try to retrive project that have that file as part of 'direct source'
- * before returning projects that just have 'reference' to this file
+ * This function will try to find a project managing the given fileName. 
+ * It will first try to retrieve a project that have that file matching the `sources` configuration of the project.
+ * Then it will try to retrieve a project where one of the sources files has a reference over the given file.
+ * Finally if no project has been found a temp project will be instanciated/reused.
  * 
- * @param fileName the path of the typesrcript file for which project are looked fo
+ * @param fileName the absolute name of the typesrcript file for which projects are looked for.
  */
 export function getProjectForFile(fileName: string): promise.Promise<TypeScriptProject> {
     return queue.then((): any => {
-        var projects = utils.mapValues(projectMap),
-            project: TypeScriptProject = null;
+        var projects = utils.getMapValues(projectMap);
+        var project: TypeScriptProject = null;
+            
         //first we check for a project that have tha file as source 
         projects.some(tsProject => {
             if (tsProject.getProjectFileKind(fileName) === ProjectFileKind.SOURCE) {
@@ -214,14 +220,14 @@ export function getProjectForFile(fileName: string): promise.Promise<TypeScriptP
         if (!project) {
             var config: TypeScriptProjectConfig = {
                 sources: [fileName],
-                compilationSettings: {
+                compilerOptions: {
                     target: ts.ScriptTarget.Latest,
                     module: ts.ModuleKind.CommonJS,
                     noLib: false
                 }
             }
-            tempProject = project = 
-                createProject(projectRootDir, config, fileSystem, workingSet);
+            
+            tempProject = createProject(projectRoot, config, fileSystem, workingSet);
             return tempProject.init().then(() => tempProject);
         }
 
@@ -231,15 +237,17 @@ export function getProjectForFile(fileName: string): promise.Promise<TypeScriptP
 
 
 /* 
- * update / delete / create project according to changes in project configs
+ * Update / delete / create projects according to changes in project configs map.
+ * 
+ * @param configs the new Map of TypeScriptProjectConfig
  */
-export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }): promise.Promise<void> {
+export function updateProjectConfigs(configs: Map<TypeScriptProjectConfig>): promise.Promise<void> {
     projectConfigs = configs;
     return queue.then(() => {
         var promises: promise.Promise<any>[] = [];
         Object.keys(projectMap).forEach(projectId => {
-            var project = projectMap[projectId],
-                config = projectConfigs[projectId];
+            var project = projectMap[projectId];
+            var config = projectConfigs[projectId];
             
             if (!config) {
                 project.dispose();
@@ -255,15 +263,6 @@ export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptP
             }
         });
         
-        return <promise.Promise<void>><any>promise.Promise.all(promises)
+        return <any>promise.Promise.all(promises)
     });
 };
-
-
-
-
-
-
-
-
-

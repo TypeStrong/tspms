@@ -18,7 +18,7 @@ class WorkingSetMock implements ws.IWorkingSet {
         this.files = this.files.concat(paths);
         this.workingSetChanged.dispatch({
             kind: ws.WorkingSetChangeKind.ADD,
-            paths: paths
+            fileNames: paths
         });
     }
     
@@ -27,7 +27,7 @@ class WorkingSetMock implements ws.IWorkingSet {
         this.files = this.files.filter(path => paths.indexOf(path) === -1);
         this.workingSetChanged.dispatch({
             kind: ws.WorkingSetChangeKind.REMOVE,
-            paths: paths
+            fileNames: paths
         });
     }
 }

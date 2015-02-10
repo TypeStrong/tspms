@@ -31,7 +31,7 @@ interface Config {
     /**
      * Path to an alternative typescriptCompiler
      */
-    typescriptPath?: string;
+    compilerDirectory?: string;
 }
 
 describe('project test', function () {
@@ -41,7 +41,7 @@ describe('project test', function () {
 
 
     var defaultLibLocation = '/lib.d.ts';
-    var defaultCompilationSettings: ts.CompilerOptions = {
+    var defaultCompilerOptions: ts.CompilerOptions = {
         target: ts.ScriptTarget.Latest,
         module: ts.ModuleKind.None,
         noLib: false
@@ -52,8 +52,8 @@ describe('project test', function () {
         compilerManager.init(fileSystemMock, defaultLibLocation);
         var projectConfig = {
             sources: config.sources,
-            compilationSettings: utils.assign({}, defaultCompilationSettings, config.compilationSettings || {}),
-            typescriptPath: config.typescriptPath
+            compilerOptions: utils.assign({}, defaultCompilerOptions, config.compilationSettings || {}),
+            compilerDirectory: config.compilerDirectory
         }
         
         
@@ -450,7 +450,7 @@ describe('project test', function () {
                 sources: [
                     'src/**/*ts'
                 ],
-                typescriptPath: '/typescript'
+                compilerDirectory: '/typescript'
             });
 
             jest.runAllTimers();
@@ -489,8 +489,8 @@ describe('project test', function () {
         function updateProject(config: Config) {
              var projectConfig = {
                 sources: config.sources,
-                compilationSettings: utils.assign({}, defaultCompilationSettings, config.compilationSettings || {}),
-                typescriptPath: config.typescriptPath
+                compilerOptions: utils.assign({}, defaultCompilerOptions, config.compilationSettings || {}),
+                compilerDirectory: config.compilerDirectory
             }
             typeScriptProject.update(projectConfig);
         }
@@ -627,7 +627,7 @@ describe('project test', function () {
         });
 
 
-        xit('should reinitialize the project if typeScriptPath has changed', function () {
+        xit('should reinitialize the project if compilerDirectory has changed', function () {
             var spy = spyOn(typeScriptProject, 'init').andCallThrough();
             expect(typeScriptProject.getProjectFilesSet().hasOwnProperty('/src/file2.ts')).toBeFalsy();
 
@@ -635,7 +635,7 @@ describe('project test', function () {
                 compilationSettings: {
                     target: ts.ScriptTarget.ES3
                 },
-                typescriptPath: 'typescript',
+                compilerDirectory: 'typescript',
                 sources: [
                     'src/file2.ts'
                 ]
@@ -767,7 +767,7 @@ describe('project test', function () {
 
         it('should edit a script when a document corresponding to a project file\'s is edited', function () {
             workingSetMock.documentEdited.dispatch({
-                path: '/src/file1.ts',
+                fileName: '/src/file1.ts',
                 changeList: [{
                     from: 0,
                     to: 0,
@@ -779,7 +779,7 @@ describe('project test', function () {
 
             expect(getProjectFileContent('/src/file1.ts')).toBe('console.log(\'hello world\')');
             workingSetMock.documentEdited.dispatch({
-                path: '/src/file1.ts',
+                fileName: '/src/file1.ts',
                 changeList: [{
                     from: 8,
                     to: 11,
@@ -796,7 +796,7 @@ describe('project test', function () {
 
         it('should set script with given document content ', function () {
             workingSetMock.documentEdited.dispatch({
-                path: '/src/file1.ts',
+                fileName: '/src/file1.ts',
                 documentText: 'console.log(\'hello world\')'
             });
 
@@ -809,7 +809,7 @@ describe('project test', function () {
 
         it('should revert a file when a document have been closed without saving', function () {
             workingSetMock.documentEdited.dispatch({
-                path: '/src/file1.ts',
+                fileName: '/src/file1.ts',
                 documentText: 'console.log(\'hello world\')'
             });
             workingSetMock.removeFiles(['/src/file1.ts']);

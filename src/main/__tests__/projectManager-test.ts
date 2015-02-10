@@ -19,7 +19,7 @@ import ts = require('typescript');
     /**
      * Path to an alternative typescriptCompiler
      */
-    typescriptPath?: string;
+    compilerDirectory?: string;
 } 
 
 describe('TypeScriptProjectManager', function () {
@@ -44,7 +44,7 @@ describe('TypeScriptProjectManager', function () {
         }
         projectManager.init({
             projectConfigs: (<any> projectConfigs),
-            defaultTypeScriptLocation: 'lib.d.ts',
+            defaultLibFileName: 'lib.d.ts',
             fileSystem: fileSystemMock,
             workingSet: null
         });

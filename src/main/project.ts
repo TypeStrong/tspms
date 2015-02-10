@@ -1,175 +1,182 @@
 'use strict';
 
-import ts                   = require('typescript');
-import path                 = require('path');
-import promise              = require('./promise');
-import fs                   = require('./fileSystem');
-import ws                   = require('./workingSet');
-import utils                = require('./utils');
-import console              = require('./logger');
-import LanguageServiceHost  = require('./languageServiceHost');
-import compilerManager      = require('./compilerManager');
-import TypeScriptInfo       = compilerManager.TypeScriptInfo;
-import Map                  = utils.Map;
-import Set                  = utils.Set;
+import ts = require('typescript');
+import path = require('path');
+import promise = require('./promise');
+import fs = require('./fileSystem');
+import ws = require('./workingSet');
+import utils = require('./utils');
+import console = require('./logger');
+import LanguageServiceHost = require('./languageServiceHost');
+import compilerManager = require('./compilerManager');
+
+import TypeScriptInfo = compilerManager.TypeScriptInfo;
+import Map = utils.Map;
+import Set = utils.Set;
 
 //--------------------------------------------------------------------------
 //
-//  TypeScriptProject
+//  Type Definitions
 //
 //--------------------------------------------------------------------------
 
 /**
- * Project Configuration
+ * Project Configuration.
  */
 export type TypeScriptProjectConfig = {
-    
     /**
-     * Array of minimatch pattern string representing 
-     * sources of a project
+     * Patterns used for glob matching sources file of the project
      */
     sources: string[] | string;
     
     /**
-     * Compiltation settings
+     * Compiler options
      */
-    compilationSettings: ts.CompilerOptions;
+    compilerOptions: ts.CompilerOptions;
         
     /**
-     * Path to an alternative typescriptCompiler
+     * Absolute path of the compiler directory
      */
-    typescriptPath?: string;
-    
+    compilerDirectory?: string;
 }
 
+/**
+ * A TypeScript project is responsible of managing an instance of LanguageService and LanguageServiceHost, 
+ * and expose those instance.
+ * It will extract files and compiler options for a given configuration and feed the LanguageServiceHost accordingly.
+ */
 export interface TypeScriptProject {
     
-    //-------------------------------
-    //  public methods
-    //-------------------------------
-    
     /**
-     * Initialize the project an his component
+     * Initialize the project.
      */
     init(): promise.Promise<void>;
 
-    
     /**
-     * update a project with a new config
+     * Update a project accordingly to a new configuration.
+     * 
+     * @param config the new project configuration.
      */
     update(config: TypeScriptProjectConfig): promise.Promise<void>;
     
     /**
-     * dispose the project
+     * Dispose the project.
      */
     dispose():void
 
-
-    
     /**
-     * return the language service host of the project
+     * Exposes the LanguageServiceHost instance managed by the project.
      */
     getLanguageServiceHost(): LanguageServiceHost;
     
     /**
-     * return the languageService used by the project
+     * Exposes the LanguageService instance managed by the project.
      */
     getLanguageService(): ts.LanguageService;
     
-    
     /**
-     * return the typescript info used by the project
+     * Exposes the typescript information used by the project.
      */
     getTypeScriptInfo(): TypeScriptInfo;
     
-    
-    //-------------------------------
-    //  exposed files informations
-    //-------------------------------
     /**
-     * return the set of files contained in the project
+     * The set of files in the project sources.
      */
     getProjectFilesSet(): Set;
     
     /**
-     * for a given path, give the relation between the project an the associated file
-     * @param path
+     * For a given file, give the relation between the project an the associated file.
+     * 
+     * @param fileName the absolute file name of the file.
      */
     getProjectFileKind(fileName: string): ProjectFileKind;
 }
 
-
+/**
+ * Describe the relation between a file and a project
+ */
 export const enum ProjectFileKind {
     /**
-     * the file is not a part of the project
+     * The file is not a part of the project.
      */
     NONE,
     /**
-     * the file is a source file of the project
+     * The file is a source file of the project.
      */
     SOURCE,
     /**
-     * the file is referenced by a source file of the project
+     * The file is referenced by a source file of the project.
      */
     REFERENCE
 }
 
+//--------------------------------------------------------------------------
+//
+//  TypeScriptProject Factory
+//
+//--------------------------------------------------------------------------
 
-
-
-
+/**
+ * TypeScriptProject factory.
+ * 
+ * @param projectRoot the absolute path to the root directory of the project
+ * @param config the project configuration
+ * @param fileSystem the fileSystem wrapper instance used by this project
+ */
 export function createProject(
-    baseDirectory: string, 
+    projectRoot: string, 
     config: TypeScriptProjectConfig, 
     fileSystem: fs.IFileSystem, 
     workingSet: ws.IWorkingSet): TypeScriptProject {
     
-    //-------------------------------
-    //  variables
-    //-------------------------------
-    
+    //--------------------------------------------------------------------------
+    //
+    //  Internal API
+    //
+    //--------------------------------------------------------------------------
     
     /**
-     * Configuration of this project
+     * The configuration associated to the project.
      */
     var _config = utils.clone(config);
     
     /**
-     * Language Service host instance managed by this project
+     * The LanguageServicehost instance managed by the project.
      */
     var languageServiceHost: LanguageServiceHost;
     
     /**
-     * LanguageService managed by this project
+     * The LanguageService instance managed by this project.
      */
     var languageService: ts.LanguageService;
     
     /**
-     * Map path to content
+     * The set of files composing the project.
      */
     var projectFilesSet: Set;
     
     /**
-     * store file references
+     * A map of set describing references between projects Files
      */
     var references: Map<Set>;
     
-    
     /**
-     * a promise queue used to run in sequence file based operation
+     * A promise queue used to insure that fileSystem operaion are run in sequence.
      */
     var queue = utils.createPromiseQueue()
     
-       
     /**
-     * info for the curently use typescript compiler
+     * Compiler information for the typescript compiler used by the project.
      */
     var typeScriptInfo: TypeScriptInfo;
     
     
+    //-------------------------------
+    //  Project Files Management
+    //-------------------------------
+    
     /**
-     * update the languageService host script 'open' status 
-     * according to file in the working set
+     * Update the languageService host script 'open' status according to file in the working set.
      */
     function updateWorkingSet() {
         workingSet.getFiles().then(files => files.forEach(fileName => {
@@ -179,24 +186,19 @@ export function createProject(
         }));
     }
     
-    
-    //-------------------------------
-    //  Project Files Management
-    //-------------------------------
-    
     /**
-     * retrieve files content for path match described in the config
+     * Retrieves the files content for path matching the config sources patterns.
      */
     function collectFiles(): promise.Promise<any> { 
         return fileSystem.getProjectFiles().then(files => {
             var promises: promise.Promise<any>[] = [];
             files.forEach(fileName => {
                 if (isProjectSourceFile(fileName) && !projectFilesSet[fileName]) {
-                    promises.push(addFile(fileName, false));
+                    promises.push(addFile(fileName));
                 }
             });
             
-            if (!_config.compilationSettings.noLib && !projectFilesSet[typeScriptInfo.defaultLibFileName]) {
+            if (!_config.compilerOptions.noLib && !projectFilesSet[typeScriptInfo.defaultLibFileName]) {
                 promises.push(addFile(typeScriptInfo.defaultLibFileName));
             }
             
@@ -205,19 +207,20 @@ export function createProject(
     }
     
     /**
-     * return true a if a given file path match the config
-     * @param path
+     * Return true a if a given file path match the config sources patterns.
+     * 
+     * @param fileName the absolute file name.
      */
     function isProjectSourceFile(fileName: string): boolean {
-        return utils.match(baseDirectory, fileName, _config.sources);
+        return utils.match(projectRoot, fileName, _config.sources);
     }
     
-   
     /**
-     * add a file to the project and all file that this file reference
-     * @param path
+     * Add a file to the project and all references of this file.
+     * 
+     * @param fileName the absolute file name.
      */
-    function addFile(fileName: string, notify = true): promise.Promise<any>  {
+    function addFile(fileName: string): promise.Promise<any>  {
         if (!projectFilesSet[fileName]) {
             projectFilesSet[fileName] = true;
             return fileSystem.readFile(fileName).then(content => {
@@ -235,15 +238,15 @@ export function createProject(
         return null;
     }
     
-    
     /**
-     * remove a file from the project
-     * @param path
+     * Remove a file from the project, and all references that are not referenced by another file.
+     * 
+     * @param fileName the absolute file name.
      */
     function removeFile(fileName: string) {
         if (projectFilesSet[fileName]) {
-            getReferencedOrImportedFiles(fileName).forEach((referencedPath: string) => {
-                removeReference(fileName, referencedPath);
+            getReferencedOrImportedFiles(fileName).forEach((referencedFileName: string) => {
+                removeReference(fileName, referencedFileName);
             });
             delete projectFilesSet[fileName];
             languageServiceHost.removeScript(fileName);
@@ -251,8 +254,9 @@ export function createProject(
     }
     
     /**
-     * update a project file
-     * @param path
+     * Update a project file content.
+     * 
+     * @param fileName the absolute file name.
      */
     function updateFile(fileName: string) {
         fileSystem.readFile(fileName).then(content => {
@@ -262,24 +266,21 @@ export function createProject(
         });
     }
     
-    
- 
-    
-    
     //-------------------------------
-    //  References
+    //  References management
     //-------------------------------
     
     /**
-     * for a given file retrives the file referenced or imported by this file
-     * @param path
+     * For a given file retrives the file referenced or imported by this file.
+     * 
+     * @param fileName the absolute fileName of the file.
      */
     function getReferencedOrImportedFiles(fileName: string): string[] {
         if (!projectFilesSet[fileName]) {
             return [];
         }
-        var preProcessedFileInfo = ts.preProcessFile(languageServiceHost.getScriptContent(fileName), true),
-            dir = path.dirname(fileName);
+        var preProcessedFileInfo = ts.preProcessFile(languageServiceHost.getScriptContent(fileName), true);
+        var dir = path.dirname(fileName);
         
         return preProcessedFileInfo.referencedFiles.map(fileReference => {
             return utils.pathResolve(dir, fileReference.filename);
@@ -289,41 +290,44 @@ export function createProject(
     }
     
     /**
-     * add a reference 
+     * Add a reference.
      * 
-     * @param fileName the path of the file referencing anothe file
-     * @param referencedPath the path of the file referenced
+     * @param fileName the absolute fileName of the file referencing another file.
+     * @param referencedFileName the absolute fileName of the file referenced.
      */
-    function addReference(fileName: string, referencedPath: string) {
-        if (!references[referencedPath]) {
-            references[referencedPath] = Object.create(null);
+    function addReference(fileName: string, referencedFileName: string) {
+        if (!references[referencedFileName]) {
+            references[referencedFileName] = Object.create(null);
         }
-        references[referencedPath][fileName] = true;
+        references[referencedFileName][fileName] = true;
     }
     
     /**
-     * remove a reference
+     * Remove a reference, if the referenced file is not referenced anymore by any
+     * other file, remove that file from the project
      * 
-     * @param fileName the path of the file referencing anothe file
-     * @param referencedPath the path of the file referenced
+     * @param fileName the absolute fileName of the file referencing another file.
+     * @param referencedFileName he absolute fileName of the file referenced.
      */
-    function removeReference(fileName: string, referencedPath: string) {
-        var fileRefs = references[referencedPath];
+    function removeReference(fileName: string, referencedFileName: string) {
+        var fileRefs = references[referencedFileName];
         if (!fileRefs) {
-            removeFile(referencedPath);
+            removeFile(referencedFileName);
         }
         delete fileRefs[fileName];
         if (Object.keys(fileRefs).length === 0) {
-            delete references[referencedPath];
-            removeFile(referencedPath);
+            delete references[referencedFileName];
+            if (!isProjectSourceFile(referencedFileName)) {
+                removeFile(referencedFileName);
+            }
         }   
     }
     
     /**
-     * update file references after an update
+     * Update file references after an update.
      * 
-     * @param fileName the absolute path of the file
-     * @param oldFileReferences list of file this file referenced before being updated
+     * @param fileName the absolute file name.
+     * @param oldFileReferences the set of file this file referenced before being updated.
      */
     function updateReferences(fileName: string, oldFileReferences: Set) {
         getReferencedOrImportedFiles(fileName).forEach(referencedPath => {
@@ -343,7 +347,9 @@ export function createProject(
     //-------------------------------
     
     /**
-     * handle changes in the fileSystem
+     * Handle changes in the file system.
+     * 
+     * @param changeRecords file system changes descriptors.
      */
     function filesChangeHandler(changeRecords: fs.FileChangeRecord[]) {
         queue.then(() => {
@@ -370,20 +376,22 @@ export function createProject(
     };
     
     /**
-     * handle changes in the workingSet
+     * Handle changes in the working set.
+     * 
+     * @param changeRecord working set change descriptor.
      */
     function workingSetChangedHandler(changeRecord:  ws.WorkingSetChangeRecord) {
         queue.then(() => {
             switch (changeRecord.kind) { 
                 case ws.WorkingSetChangeKind.ADD:
-                    changeRecord.paths.forEach(fileName  => {
+                    changeRecord.fileNames.forEach(fileName  => {
                         if (projectFilesSet[fileName]) {
                             languageServiceHost.setScriptIsOpen(fileName, true);
                         }
                     });
                     break;
                 case ws.WorkingSetChangeKind.REMOVE:
-                    changeRecord.paths.forEach(fileName  => {
+                    changeRecord.fileNames.forEach(fileName  => {
                         if (projectFilesSet[fileName]) {
                             languageServiceHost.setScriptIsOpen(fileName, false);
                             updateFile(fileName);
@@ -395,30 +403,34 @@ export function createProject(
     };
     
     /**
-     * handle document edition
+     * Handle document edition.
+     * 
+     * @param record edition descriptor.
      */
     function documentEditedHandler(record: ws.DocumentChangeRecord) {
         queue.then(() => {
-            if (projectFilesSet[record.path]) {
-                var oldPaths = utils.arrayToSet(getReferencedOrImportedFiles(record.path));
+            if (projectFilesSet[record.fileName]) {
+                var oldPaths = utils.arrayToSet(getReferencedOrImportedFiles(record.fileName));
                 if (record.documentText) {
-                    languageServiceHost.updateScript(record.path, record.documentText);
+                    languageServiceHost.updateScript(record.fileName, record.documentText);
                 } else {
                     record.changeList.forEach(change => {
-                        languageServiceHost.editScript(record.path, change.from, change.to, change.text);
+                        languageServiceHost.editScript(record.fileName, change.from, change.to, change.text);
                     });
                 }
-                updateReferences(record.path, oldPaths);
+                updateReferences(record.fileName, oldPaths);
             }
         });
     };
     
-     //-------------------------------
-    //  public methods
-    //-------------------------------
+    //--------------------------------------------------------------------------
+    //
+    //  Public API
+    //
+    //--------------------------------------------------------------------------
     
     /**
-     * Initialize the project an his component
+     * Initialize the project.
      */
     function init(): promise.Promise<void> {
         projectFilesSet = Object.create(null);
@@ -427,19 +439,19 @@ export function createProject(
         workingSet.documentEdited.add(documentEditedHandler);
         fileSystem.projectFilesChanged.add(filesChangeHandler);
         
-        var typescriptPath = _config.typescriptPath;
+        var compilerDirectory = _config.compilerDirectory;
         return queue.reset(
             new promise.Promise<TypeScriptInfo>((resolve, reject) => {
-                if (!typescriptPath) {
+                if (!compilerDirectory) {
                     resolve(compilerManager.getDefaultTypeScriptInfo())
                 } else {
                     resolve(
                         compilerManager
-                        .acquireCompiler(_config.typescriptPath)
+                        .acquireCompiler(_config.compilerDirectory)
                         .catch(e => {
                             //TODO instead of silently returning default we should handle this error in project
                             //manager and return an error in the linter
-                            console.warn('could not retrieve typescript compiler at path: ' + typescriptPath);
+                            console.warn('could not retrieve typescript compiler at path: ' + compilerDirectory);
                             return compilerManager.getDefaultTypeScriptInfo();
                         })
                     );
@@ -447,8 +459,8 @@ export function createProject(
             })
             .then(info =>  {
                 typeScriptInfo = info;
-                languageServiceHost = LanguageServiceHost.create(baseDirectory, typeScriptInfo.defaultLibFileName);
-                languageServiceHost.setCompilationSettings(utils.clone(_config.compilationSettings));
+                languageServiceHost = LanguageServiceHost.create(projectRoot, typeScriptInfo.defaultLibFileName);
+                languageServiceHost.setCompilationSettings(utils.clone(_config.compilerOptions));
                 languageService = 
                     typeScriptInfo.ts.createLanguageService(languageServiceHost, info.documentRegistry);
 
@@ -458,24 +470,25 @@ export function createProject(
     }
     
     /**
-     * update a project with a new config
+     * Update a project accordingly to a new configuration.
+     * 
+     * @param config the new project configuration.
      */
     function update(config: TypeScriptProjectConfig): promise.Promise<void> {
-        
-        if (config.typescriptPath !== _config.typescriptPath) {
+        if (config.compilerDirectory !== _config.compilerDirectory) {
             languageService.dispose();
             return init();
         }
-        languageService.cleanupSemanticCache();
         
-        if (!_config.compilationSettings.noLib && config.compilationSettings.noLib) {
+        if (!_config.compilerOptions.noLib && config.compilerOptions.noLib) {
             removeFile(typeScriptInfo.defaultLibFileName);
         }
+        languageService.cleanupSemanticCache();
         
         var pojectSources = Object.keys(projectFilesSet).filter(fileName => isProjectSourceFile(fileName));
         _config = config;
         return queue.then(() => {
-            languageServiceHost.setCompilationSettings(_config.compilationSettings);
+            languageServiceHost.setCompilationSettings(_config.compilerOptions);
             var promises: promise.Promise<any>[] = [];
             pojectSources.forEach(fileName => {
                 if (!isProjectSourceFile(fileName)) {
@@ -490,7 +503,7 @@ export function createProject(
     }
     
     /**
-     * dispose the project
+     * Dispose the project.
      */
     function dispose() {
         workingSet.workingSetChanged.remove(workingSetChangedHandler);
@@ -500,28 +513,25 @@ export function createProject(
         languageService.dispose();
     }
     
-
-    
     /**
-     * for a given path, give the relation between the project an the associated file
-     * @param path
+     * For a given file, give the relation between the project an the associated file.
+     * 
+     * @param fileName the absolute file name of the file.
      */
     function getProjectFileKind(fileName: string): ProjectFileKind {
         return !!projectFilesSet[fileName] ?
             (isProjectSourceFile(fileName) ?   ProjectFileKind.SOURCE : ProjectFileKind.REFERENCE) :
             ProjectFileKind.NONE;
     }
-    
-    
   
     return {
-        init: init,
-        update: update,
-        dispose: dispose,
+        init,
+        update,
+        dispose,
+        getProjectFileKind,
         getLanguageService: () => languageService,
         getLanguageServiceHost: () => languageServiceHost,
         getProjectFilesSet: () => utils.clone(projectFilesSet),
-        getProjectFileKind: getProjectFileKind,
         getTypeScriptInfo: () => typeScriptInfo
     };
 }

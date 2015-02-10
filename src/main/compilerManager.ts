@@ -10,10 +10,9 @@ import Map = utils.Map;
 /**
  * @module CompilerManager
  * 
- * This module manage the different compiler version used
- * by the services, for a given path it will `instanciate` 
- * a `ts` module for a given compiler and release it when 
- * no project use it anymore
+ * This module manage the different compiler version used by the services. 
+ * For a given path it will `instanciate`  a `ts` module for a given compiler 
+ * and release it when no project use it anymore.
  */
 
 
@@ -72,25 +71,22 @@ type TypeScriptMeta = {
 //--------------------------------------------------------------------------
 
 /**
- * @private
- * A map compilerDirectory => TypeScriptInfo
+ * A map compilerDirectory to TypeScriptInfo.
  */
 var typeScriptInfos: Map<TypeScriptInfo> = Object.create(null);
 
 /** 
- * @private
- * A map compilerDirectory => TypeScriptInfo
+ * A map compilerDirectory to TypeScriptMeta.
  */
 var typeScriptMetas: Map<TypeScriptMeta> = Object.create(null);
 
 /**
- * the fileSystem used by the compiler manager
+ * The fileSystem wrapper instance used by this module.
  */
 var fileSystem: fs.IFileSystem;
 
 /**
- * @private
- * information related to the `default` compiler bundled with the service
+ * Information related to the `default` compiler bundled with the service.
  */
 var defaultTypeScriptInfo: TypeScriptInfo;
 
