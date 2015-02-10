@@ -17,12 +17,12 @@ import ISignal = utils.ISignal;
 export interface IFileSystem {
     
     /**
-     * Return a promise resolving to the project root folder path.
+     * Return a promise resolving to the current directory opened in the editor.
      */
-    getProjectRoot(): promise.Promise<string>;
+    getCurrentDir(): promise.Promise<string>;
     
     /**
-     * A signal dispatching change in files under the project root directory.
+     * A signal dispatching change in files under the current directory.
      */
     projectFilesChanged: ISignal<FileChangeRecord[]>;
     

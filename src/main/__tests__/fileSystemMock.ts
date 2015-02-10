@@ -11,7 +11,7 @@ class FileSystem implements fs.IFileSystem {
         private files: { [fileName: string]: string } = {}
     ) {}
     
-    getProjectRoot() {
+    getCurrentDir() {
         return Promise.resolve('/');
     }
     

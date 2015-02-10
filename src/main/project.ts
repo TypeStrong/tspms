@@ -119,12 +119,12 @@ export const enum ProjectFileKind {
 /**
  * TypeScriptProject factory.
  * 
- * @param projectRoot the absolute path to the root directory of the project
- * @param config the project configuration
- * @param fileSystem the fileSystem wrapper instance used by this project
+ * @param currentDir the absolute path to the current directory opended in the editor.
+ * @param config the project configuration.
+ * @param fileSystem the fileSystem wrapper instance used by this project.
  */
 export function createProject(
-    projectRoot: string, 
+    currentDir: string, 
     config: TypeScriptProjectConfig, 
     fileSystem: fs.IFileSystem, 
     workingSet: ws.IWorkingSet): TypeScriptProject {
@@ -212,7 +212,7 @@ export function createProject(
      * @param fileName the absolute file name.
      */
     function isProjectSourceFile(fileName: string): boolean {
-        return utils.match(projectRoot, fileName, _config.sources);
+        return utils.match(currentDir, fileName, _config.sources);
     }
     
     /**
@@ -462,7 +462,7 @@ export function createProject(
             })
             .then(info =>  {
                 typeScriptInfo = info;
-                languageServiceHost = LanguageServiceHost.create(projectRoot, typeScriptInfo.defaultLibFileName);
+                languageServiceHost = LanguageServiceHost.create(currentDir, typeScriptInfo.defaultLibFileName);
                 languageServiceHost.setCompilationSettings(utils.clone(_config.compilerOptions));
                 languageService = 
                     typeScriptInfo.ts.createLanguageService(languageServiceHost, info.documentRegistry);

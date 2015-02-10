@@ -30,6 +30,9 @@ import Map = utils.Map;
 //
 //--------------------------------------------------------------------------
 
+/**
+ * ProjectManager configuration
+ */
 export type ProjectManagerConfig  = {
     /**
      * Absolute fileName of the `lib.d.ts` file associated to the bundled compiler.
@@ -79,9 +82,9 @@ var projectMap: Map<TypeScriptProject> = Object.create(null);
 var tempProject: TypeScriptProject;
 
 /**
- * Absolute filename of the root directory.
+ * Absolute filename of the directory opened in the editor.
  */
-var projectRoot: string;
+var currentDir: string;
 
 /**
  * A promise queue used to insure async task are run sequentialy.
@@ -129,7 +132,7 @@ function disposeProjects(): void {
  * @param config the project config.
  */
 function createProjectFromConfig(projectName: string, config: TypeScriptProjectConfig) {
-    var project = createProject(projectRoot, config, fileSystem, workingSet);
+    var project = createProject(currentDir, config, fileSystem, workingSet);
     return project.init().then(() => {
         projectMap[projectName] = project;
     }, () => {
@@ -157,8 +160,8 @@ export function init(config: ProjectManagerConfig): promise.Promise<void> {
     CompilerManager.init(config.fileSystem, config.defaultLibFileName);
 
     
-    return queue.reset(fileSystem.getProjectRoot().then(rootDir => {
-        projectRoot = rootDir;
+    return queue.reset(fileSystem.getCurrentDir().then(dir => {
+        currentDir = dir;
         return createProjects();
     }));
 }
@@ -227,7 +230,7 @@ export function getProjectForFile(fileName: string): promise.Promise<TypeScriptP
                 }
             }
             
-            tempProject = createProject(projectRoot, config, fileSystem, workingSet);
+            tempProject = createProject(currentDir, config, fileSystem, workingSet);
             return tempProject.init().then(() => tempProject);
         }
 
