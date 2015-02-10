@@ -1,140 +1,146 @@
 'use strict';
 
-import ts     = require('typescript');
-import path   = require('path');
-import utils  = require('./utils');
+import ts = require('typescript');
+import path = require('path');
+import utils = require('./utils');
 import console = require('./logger');
 
+import Map = utils.Map;
 
+//--------------------------------------------------------------------------
+//
+//  Type Definitions
+//
+//--------------------------------------------------------------------------
+
+/**
+ * The LanguageServiceHost module provides an ts.LanguageServiceHost implementations 
+ */
 interface LanguageServiceHost extends ts.LanguageServiceHost {
     /**
-     * add a script to the host
+     * Add a script to the LanguageServiceHost.
      * 
-     * @param fileName the absolute path of the file
-     * @param content the file content
+     * @param fileName the absolute path of the file.
+     * @param content the file content.
      */
     addScript(fileName: string, content: string): void;
     
     /**
-     * remove a script from the host
+     * Remove a script from the LanguageServiceHost.
      * 
-     * @param fileName the absolute path of the file
+     * @param fileName the absolute path of the file.
      */
-    removeScript(fileName: string):void;
+    removeScript(fileName: string): void;
     
     /**
-     * remove all script from the host
+     * Remove all script from the LanguageServiceHost.
      * 
-     * @param fileName the absolute path of the file
+     * @param fileName the absolute path of the file.
      */
     removeAll(): void;
     
     /**
-     * update a script
+     * Update a script.
      * 
-     * @param fileName the absolute path of the file
-     * @param content the new file content
+     * @param fileName the absolute path of the file.
+     * @param content the new file content.
      */
     updateScript(fileName: string, content: string): void;
 
     /**
-     * edit a script
+     * Edit a script.
      * 
      * @param fileName the absolute path of the file
-     * @param minChar the index in the file content where the edition begins
-     * @param limChar the index  in the file content where the edition ends
-     * @param newText the text inserted
+     * @param minChar the index in the file content where the edition begins.
+     * @param limChar the index  in the file content where the edition ends.
+     * @param newText the text inserted.
      */
     editScript(fileName: string, minChar: number, limChar: number, newText: string): void;
     
     /**
-     * set 'open' status of a script
+     * Set the `isOpen` status of a script.
      * 
-     * @param fileName the absolute path of the file
-     * @param isOpen open status
+     * @param fileName the absolute file name.
+     * @param isOpen open status.
      */
     setScriptIsOpen(fileName: string, isOpen: boolean): void;
     
     /**
-     * the the language service host compilation settings
+     * The the language service host compilater options.
      * 
-     * @param the settings to be applied to the host
+     * @param the settings to be applied to the host.
      */
-    setCompilationSettings(settings: ts.CompilerOptions ): void;
+    setCompilationSettings(settings: ts.CompilerOptions): void;
     
     /**
-     * retrieve the content of a given script
+     * Retrieve the content of a given file.
      * 
-     * @param fileName the absolute path of the file
+     * @param fileName the absolute file name.
      */
     getScriptContent(fileName: string): string;
-    
-    /**
-     * return an index from a positon in line/char
-     * 
-     * @param path the path of the file
-     * @param position the position
-     */
-    getIndexFromPosition(fileName: string, position: {ch: number; line: number}): number;
-    
-    
-    /**
-     * return a positon in line/char from an index
-     * 
-     * @param path the path of the file
-     * @param index the index
-     */
-    getPositionFromIndex(fileName: string, index: number): {ch: number; line: number};
+
 }
 
-
-module LanguageServiceHost {
-    export function create(baseDir: string, defaultLibFileName: string): LanguageServiceHost {
+module LanguageServiceHost {
+    
+    //--------------------------------------------------------------------------
+    //
+    //  LanguageServiceHost factory
+    //
+    //--------------------------------------------------------------------------
+    
+    /**
+     * LanguageServiceHost factory.
+     * 
+     * @param currentDir the current directory opened in the editor
+     * @param defaultLibFileName the absolute file name of the `lib.d.ts` files associated to the language service host instance.
+     */
+    export function create(currentDir: string, defaultLibFileName: string): LanguageServiceHost {
 
         /**
-         * compilationSettings
+         * CompilationSettings;
          */
         var compilationSettings: ts.CompilerOptions;
 
         /**
-         * a map associating file absolute path to ScriptInfo
+         * A map associating absolute file name to ScriptInfo.
          */
-        var fileNameToScript: {[fileName: string]: ScriptInfo} = Object.create(null);
+        var fileNameToScript: Map<ScriptInfo> = Object.create(null);
 
         /**
-         * add a script to the host
+         * Add a script to the LanguageServiceHost.
          * 
-         * @param fileName the absolute path of the file
-         * @param content the file content
+         * @param fileName the absolute path of the file.
+         * @param content the file content.
          */
         function addScript(fileName: string, content: string) {
-            var script = createScriptInfo(fileName, content);
+            var script = createScriptInfo(content);
             fileNameToScript[fileName] = script;
         }
 
         /**
-         * remove a script from the host
+         * Remove a script from the LanguageServiceHost.
          * 
-         * @param fileName the absolute path of the file
+         * @param fileName the absolute path of the file.
          */
         function removeScript(fileName: string) {
             delete fileNameToScript[fileName];
         }
 
         /**
-         * remove all script from the host
+         * Remove all script from the LanguageServiceHost.
          * 
-         * @param fileName the absolute path of the file
+         * @param fileName the absolute path of the file.
          */
         function removeAll(): void {
             fileNameToScript = Object.create(null);
         }
 
         /**
-         * update a script
+         * Update a script.
          * 
-         * @param fileName the absolute path of the file
-         * @param content the new file content
+         * @param fileName the absolute path of the file.
+         * @param content the new file content.
          */
         function updateScript(fileName: string, content: string) {
             var script = fileNameToScript[fileName];
@@ -146,12 +152,12 @@ module LanguageServiceHost {
         }
 
         /**
-         * edit a script
+         * Edit a script.
          * 
          * @param fileName the absolute path of the file
-         * @param minChar the index in the file content where the edition begins
-         * @param limChar the index  in the file content where the edition ends
-         * @param newText the text inserted
+         * @param minChar the index in the file content where the edition begins.
+         * @param limChar the index  in the file content where the edition ends.
+         * @param newText the text inserted.
          */
         function editScript(fileName: string, minChar: number, limChar: number, newText: string) {
             var script = fileNameToScript[fileName];
@@ -164,10 +170,10 @@ module LanguageServiceHost {
         }
 
         /**
-         * set 'open' status of a script
+         * Set the `isOpen` status of a script.
          * 
-         * @param fileName the absolute path of the file
-         * @param isOpen open status
+         * @param fileName the absolute file name.
+         * @param isOpen open status.
          */
         function setScriptIsOpen(fileName: string, isOpen: boolean) {
             var script = fileNameToScript[fileName];
@@ -180,18 +186,18 @@ module LanguageServiceHost {
         }
 
         /**
-         * the the language service host compilation settings
+         * Set the language service host compilation settings.
          * 
          * @param the settings to be applied to the host
          */
-        function setCompilationSettings(settings: ts.CompilerOptions ): void{
+        function setCompilationSettings(settings: ts.CompilerOptions): void{ 
             compilationSettings = Object.freeze(utils.clone(settings));
         }
 
         /**
-         * retrieve the content of a given script
+         * Retrieve the content of a given script.
          * 
-         * @param fileName the absolute path of the file
+         * @param fileName the absolute path of the file.
          */
         function getScriptContent(fileName: string): string {
             var script = fileNameToScript[fileName];
@@ -202,43 +208,10 @@ module LanguageServiceHost {
         }
 
         /**
-         * return an index from a positon in line/char
+         * Return the version of a script for the given file name.
          * 
-         * @param path the path of the file
-         * @param position the position
+         * @param fileName the absolute path of the file.
          */
-        function getIndexFromPosition(fileName: string, position: {ch: number; line: number}): number {
-            var script = fileNameToScript[fileName];
-            if (script) {
-                return script.getPositionFromLine(position.line, position.ch);
-            }
-            return -1;
-        }
-
-
-        /**
-         * return a positon in line/char from an index
-         * 
-         * @param path the path of the file
-         * @param index the index
-         */
-        function getPositionFromIndex(fileName: string, index: number): {ch: number; line: number} {
-            var script = fileNameToScript[fileName];
-            if (script) {
-                return script.getLineAndColForPositon(index);
-            }
-            return null;
-        }
-
-
-        function getCompilationSettings(): ts.CompilerOptions {
-            return compilationSettings;
-        }
-
-        function getScriptFileNames(): string[] {
-            return Object.keys(fileNameToScript);
-        }
-
         function getScriptVersion(fileName: string): string {
             var script = fileNameToScript[fileName];
             if (script) {
@@ -247,6 +220,11 @@ module LanguageServiceHost {
             return '0';
         }
 
+        /**
+         * Return the 'open status' of a script for the given file name.
+         * 
+         * @param fileName the absolute path of the file.
+         */
         function getScriptIsOpen(fileName: string): boolean {
             var script = fileNameToScript[fileName];
             if (script) {
@@ -255,109 +233,160 @@ module LanguageServiceHost {
             return false;
         }
 
+        /**
+         * Return an IScriptSnapshot instance for the given file name.
+         * 
+         * @param fileName the absolute path of the file.
+         */
         function getScriptSnapshot(fileName: string): ts.IScriptSnapshot {
             var script = fileNameToScript[fileName];
             if (script) {
-                return getScriptSnapShot(script);
+                return script.getScriptSnapshot();
             }
             return null;
-        }
-
-        function getCurrentDirectory(): string {
-            return baseDir;
-        }
-        
-        function getDefaultLibFilename(): string {
-            return defaultLibFileName;
         }
 
         return {
             //ts.Logger implementation, actually master implementation instead of 1.4.1
             log: console.info,
-            error:  console.error,
+            error: console.error,
             trace: console.info,
 
-
             // LanguageServiceHost implementation
-
-            addScript: addScript,
-            removeScript: removeScript,
-            removeAll: removeAll,
-            updateScript: updateScript,
-            editScript: editScript,
-            getIndexFromPosition: getIndexFromPosition,
-            getPositionFromIndex: getPositionFromIndex,
-            getScriptContent: getScriptContent,
-            setCompilationSettings: setCompilationSettings,
-            setScriptIsOpen: setScriptIsOpen,
-
+            addScript,
+            removeScript,
+            removeAll,
+            updateScript,
+            editScript,
+            getScriptContent,
+            setCompilationSettings,
+            setScriptIsOpen,
 
             // ts.LanguageServiceHost implementation
-            getCompilationSettings: getCompilationSettings,
-            getScriptFileNames: getScriptFileNames,
-            getScriptVersion: getScriptVersion,
-            getScriptIsOpen: getScriptIsOpen,
-            getScriptSnapshot: getScriptSnapshot,
-            getCurrentDirectory: getCurrentDirectory,
-            getDefaultLibFilename: getDefaultLibFilename
-        
+            getCompilationSettings: () => compilationSettings,
+            getScriptFileNames: () => Object.keys(fileNameToScript),
+            getCurrentDirectory: () => currentDir,
+            getDefaultLibFilename: () => defaultLibFileName,
+            getScriptVersion,
+            getScriptIsOpen,
+            getScriptSnapshot,
         };
     }
-
     
+    //--------------------------------------------------------------------------
+    //
+    //  ScriptInfo
+    //
+    //--------------------------------------------------------------------------
+
+    /**
+     * Internal Script representation.
+     */
     interface ScriptInfo {
-        getFileName(): string;
+        /**
+         * Returns the content of the file associated to the script.
+         */
         getContent(): string;
-        getVersion(): number;
-        getIsOpen(): boolean;
-        setIsOpen(val: boolean): void;
-        getEditRanges(): ts.TextChangeRange[];
-        getLineStarts(): number[];
         
-        
+        /**
+         * Update the script content.
+         * 
+         * @param newContent the new content of the file associated to the script.
+         */
         updateContent(newContent: string): void;
+        
+        /**
+         * Edit the script content.
+         * 
+         * @param minChar the index in the file content where the edition begins
+         * @param limChar the index  in the file content where the edition ends
+         * @param newText the text inserted
+         */
         editContent(minChar: number, limChar: number, newText: string): void;
-        getPositionFromLine(line: number, ch: number): number;
-        getLineAndColForPositon(position: number): { line: number; ch: number };
+        
+        /**
+         * Returns the script version.
+         */
+        getVersion(): number;
+        
+        /**
+         * Returns the `isOpen` status of the script.
+         */
+        getIsOpen(): boolean;
+        
+        /**
+         * Set the `isOpen` status of the script.
+         * 
+         * @param isOpen
+         */
+        setIsOpen(isOpen: boolean): void;
+        
+        /**
+         * Returns a `snapshot` of the script.
+         */
+        getScriptSnapshot(): ts.IScriptSnapshot;
+
     }
     
     /**
-     * Manage a script in the language service host
+     * ScriptInfo factory.
+     * 
+     * @param content the content of the file associated to this script.
      */
-    function createScriptInfo(fileName: string, content: string, isOpen = false): ScriptInfo {
+    function createScriptInfo(content: string): ScriptInfo {
         
+        /**
+         * The script current version.
+         */
+        var scriptVersion: number = 1;
         
-        var version: number = 1;
+        /**
+         * The script edit history.
+         */
         var editRanges: ts.TextChangeRange[] = [];
         
+        /**
+         * the `isOpen` status of the Script
+         */
+        var isOpen = false
+        
+        /**
+         * An array mapping the start of lines in the script to their position in the file.
+         */
         var _lineStarts: number[];
+        
+        /**
+         * A flag true if `_lineStarts` needs to be recomputed
+         */
         var _lineStartIsDirty = true;
-       
+
+        /**
+         * Retrieve the script `_lineStarts`, recompute them if needed.
+         */
         function getLineStarts() {
             if (_lineStartIsDirty) {
                 _lineStarts = ts.computeLineStarts(content);
                 _lineStartIsDirty = false;
-            } 
+            }
             return _lineStarts;
         }
 
         /**
-         * update the content of the script
+         * Update the script content.
          * 
-         * @param newContent the new script content
+         * @param newContent the new content of the file associated to the script.
          */
         function updateContent(newContent: string): void {
             if (newContent !== content) {
                 content = newContent;
                 _lineStartIsDirty = true;
                 editRanges = [];
-                version++;
+                scriptVersion++;
             }
         }
 
-
         /**
-         * edit the script content
+         * Edit the script content.
          * 
          * @param minChar the index in the file content where the edition begins
          * @param limChar the index  in the file content where the edition ends
@@ -374,96 +403,66 @@ module LanguageServiceHost {
 
             // Store edit range + new length of script
             editRanges.push(new ts.TextChangeRange(
-                ts.TextSpan.fromBounds(minChar, limChar), 
+                ts.TextSpan.fromBounds(minChar, limChar),
                 newText.length
-            ));
+                ));
 
             // Update version #
-            version++;
-        }
-
-
-
-        /**
-         * return an index position from line an character position
-         * 
-         * @param line line number
-         * @param character charecter poisiton in the line
-         */
-        function getPositionFromLine(line: number, ch: number) {
-            return getLineStarts()[line] + ch;
+            scriptVersion++;
         }
 
         /**
-         * return line and chararacter position from index position
-         * 
-         * @param position
+         * Retrieve the script `_lineStarts`, recompute them if needed.
          */
-        function getLineAndColForPositon(position: number) {
-            if (position < 0 || position > content.length) {
-                throw new RangeError('Argument out of range: position');
-            }
+        function getScriptSnapshot(): ts.IScriptSnapshot {
+            // save the state of the script
             var lineStarts = getLineStarts();
-            var lineNumber = utils.binarySearch(lineStarts, position);
-            if (lineNumber < 0) {
-                lineNumber = (~lineNumber) - 1;
+            var textSnapshot = content;
+            var snapshotVersion = scriptVersion;
+            var snapshotRanges = editRanges.slice();
+            
+            /**
+             * Retrieve the edits history between two script snapshot.
+             * 
+             * @param oldSnapshot the old snapshot to compare this one with.
+             */
+            function getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
+                var scriptVersion: number = (<any>oldSnapshot).version || 0;
+                if (scriptVersion === snapshotVersion) {
+                    return ts.TextChangeRange.unchanged;
+                }
+                var initialEditRangeIndex = snapshotRanges.length - (snapshotVersion - scriptVersion);
+
+                if (initialEditRangeIndex < 0) {
+                    return null;
+                }
+
+                var entries = snapshotRanges.slice(initialEditRangeIndex);
+                return ts.TextChangeRange.collapseChangesAcrossMultipleVersions(entries);
             }
-            return  { 
-                line: lineNumber, 
-                ch: position - lineStarts[lineNumber]
-            };
+
+            return {
+                getText: (start, end) => textSnapshot.substring(start, end),
+                getLength: () => textSnapshot.length,
+                getChangeRange,
+                getLineStartPositions: () => lineStarts,
+                version: snapshotVersion
+            }
         }
 
-        
         return {
-            getFileName: () => fileName,
             getContent: () => content,
-            getVersion: () => version,
+            getVersion: () => scriptVersion,
             getIsOpen: () => isOpen,
             setIsOpen: val => isOpen = val,
             getEditRanges: () => editRanges,
             getLineStarts,
+            getScriptSnapshot,
 
             updateContent,
-            editContent,
-            getPositionFromLine,
-            getLineAndColForPositon
+            editContent
         }
     }
-    
-    
-    
-    function getScriptSnapShot(scriptInfo: ScriptInfo): ts.IScriptSnapshot  {
-        var lineStarts = scriptInfo.getLineStarts();
-        var textSnapshot = scriptInfo.getContent();
-        var version = scriptInfo.getVersion()
-        var editRanges = scriptInfo.getEditRanges()
-        
-
-        function getChangeRange(oldSnapshot: ts.IScriptSnapshot): ts.TextChangeRange {
-            var scriptVersion: number = (<any>oldSnapshot).version || 0;
-            if (scriptVersion === version) {
-                return ts.TextChangeRange.unchanged;
-            }
-            var initialEditRangeIndex = editRanges.length - (version - scriptVersion);
-
-            if (initialEditRangeIndex < 0) {
-                return null;
-            }
-
-            var entries = editRanges.slice(initialEditRangeIndex);
-            return ts.TextChangeRange.collapseChangesAcrossMultipleVersions(entries);
-        }
-        
-        return {
-            getText: (start: number, end: number) => textSnapshot.substring(start, end),
-            getLength: () => textSnapshot.length,
-            getChangeRange: getChangeRange,
-            getLineStartPositions: () => lineStarts,
-            version: version
-        }
-    }
-    
 }
 
 

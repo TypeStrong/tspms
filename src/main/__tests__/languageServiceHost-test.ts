@@ -99,25 +99,6 @@ describe('LanguageServiceHost', function () {
         });
         
         
-        it('should provide a way to covert line/char to index position and index position to line/char', function () {
-            languageServiceHost.addScript('file1.ts',
-                'import fs = require("fs");\n' +
-                '\n' +
-                'function readFile(fileName: string): string {\n' +
-                '    return fs.readFileSync(fileName, "UTF-8")\n' +
-                '}\n' 
-            );
-            
-            expect(languageServiceHost.getIndexFromPosition('file1.ts', { ch: 10, line: 3 })).toBe(84);
-            expect(languageServiceHost.getPositionFromIndex('file1.ts', 37)).toEqual({ch: 9, line: 2});
-            
-            
-            expect(languageServiceHost.getIndexFromPosition('file2.ts', { ch: 10, line: 3 })).toBe(-1);
-            expect(languageServiceHost.getPositionFromIndex('file2.ts', 37)).toBeNull();
-            
-            var snapShot = languageServiceHost.getScriptSnapshot('file1.ts');
-            expect(snapShot.getLineStartPositions()).toEqual([0, 27, 28, 74, 120, 122]);
-        });
         
         
 //        it('should provide basic file system functions', function () {
