@@ -49,32 +49,72 @@ export var injectPromiseLibrary = promise.injectPromiseLibrary;
 //  Definitions
 //--------------------------------------------------------------------------
 
+/**
+ * ProjectManager configuration
+ */
 export import ProjectManagerConfig = ProjectManager.ProjectManagerConfig;
 
+/**
+ * Interface abstracting file system to provide adapter to the service.
+ */
 export import IFileSystem = fs.IFileSystem;
+
+/**
+ * FileSystem change descriptor.
+ */
 export import FileChangeRecord = fs.FileChangeRecord;
+
+/**
+ * An Enum representing the kind of change that migth occur in the fileSysem.
+ */
 export import FileChangeKind = fs.FileChangeKind
 
+/**
+ * A service that will reflect files in the working set of the editor.
+ */
 export import IWorkingSet = ws.IWorkingSet;
+
+/**
+ * Describe a change in a document.
+ */
 export import DocumentChangeDescriptor = ws.DocumentChangeDescriptor;
+
+/**
+ * Describe a list of changes in a document.
+ * You can provided either a `changeList` containing a description of all edition in the document, 
+ * or documentText providing the new document text. 
+ * If  the first method is used (`changeList`) the compiler will be able to use incremental compilation.
+ */
 export import DocumentChangeRecord = ws.DocumentChangeRecord;
+
+/**
+ * Describe a change in the working set.
+ */
 export import WorkingSetChangeRecord = ws.WorkingSetChangeRecord;
+
+/**
+ * An Enum listing the kind of change that might occur in the working set.
+ */
 export import WorkingSetChangeKind = ws.WorkingSetChangeKind;
 
+/**
+ * Project Configuration.
+ */
 export import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 
-
+/**
+ * C# like events and delegates for typed events dispatching.
+ */
 export import ISignal = utils.ISignal;
-export import Signal = utils.Signal;
 
 //--------------------------------------------------------------------------
 //  init
 //--------------------------------------------------------------------------
 
 /**
- * Initializate the service
+ * Initializate the service.
  * 
- * @param config the ProjectManagerConfig
+ * @param config the main service configuration
  */
 export function init(config: ProjectManagerConfig): promise.Promise<void> {
     return ProjectManager.init(config);
@@ -100,7 +140,7 @@ export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptP
 
 
 /**
- * dispose the service
+ * Dispose the service.
  */
 export function dispose(): void {
     ProjectManager.dispose();
@@ -116,11 +156,28 @@ export function dispose(): void {
 //--------------------------------------------------------------------------
 //  Globally used definition
 //--------------------------------------------------------------------------
+
+/**
+ * Represent a text span in the document.
+ */
 export type TextSpan = {
+    /**
+     * The start of the text span.
+     */
     start: number;
+    
+    /**
+     * The length of the text span.
+     */
     length: number;
 }
 
+/**
+ * Convert a TextSpan in typescript compiler format to raw json format.
+ * Since depending of the version of the language service 
+ * 
+ * @param span the text span to convert.
+ */
 function tsSpanToTextSpan(span : ts.TextSpan | { start: number; length: number; }): TextSpan {
     var start: number;
     var length: number;
@@ -141,12 +198,38 @@ function tsSpanToTextSpan(span : ts.TextSpan | { start: number; length: number; 
 //  getDiagnosticsForFile
 //--------------------------------------------------------------------------
 
+/**
+ * Represent an error diagnostic.
+ */
 export type Diagnostics = {
+    /**
+     * The name of the file related to this diagnostic.
+     */
     fileName: string;
+    
+    /**
+     * Start position of the error.
+     */
     start: number;
+    
+    /**
+     * Length of the error.
+     */
     length: number;
+    
+    /**
+     * Error message.
+     */
     messageText: string;
+    
+    /**
+     * Diagnostic category. (warning, error, message)
+     */
     category: ts.DiagnosticCategory;
+    
+    /**
+     * Error code
+     */
     code: number;
 }
 
@@ -154,7 +237,7 @@ export type Diagnostics = {
  * Retrieve a list of errors for a given file
  * return a promise resolving to a list of errors
  * 
- * @param fileName the absolute path of the file 
+ * @param fileName the absolute file name
  * @param allErrors by default errors are checked in 3 phases, options check, syntax check, 
  *   semantic check, is allErrors is set to false, the service won't check the nex phase 
  *   if there is error in the precedent one
@@ -188,6 +271,9 @@ export function getDiagnosticsForFile(fileName: string, allErrors = false): prom
 //  getCompletionAtPosition
 //--------------------------------------------------------------------------
 
+/**
+ * Represent the result of completion request
+ */
 export type CompletionResult = {
     /**
      * the matched string portion
@@ -205,10 +291,10 @@ export type CompletionResult = {
  * Retrieve completion proposal at a given point in a given file.
  * return a promise resolving to a list of completion proposals.
  * 
- * @param fileName the absolute path of the file 
- * @param position in the file where you want to retrieve completion proposal
- * @param limit the max number of proposition this service shoudl return
- * @param skip the number of proposition this service should skip
+ * @param fileName the absolute file name.
+ * @param position the position in the file where the completion is requested.
+ * @param limit the max number of proposition this service shoudl return.
+ * @param skip the number of proposition this service should skip.
  * 
  */
 export function getCompletionAtPosition(fileName: string, position: number, limit = 50, skip = 0): promise.Promise<CompletionResult> {
@@ -275,7 +361,9 @@ export function getCompletionAtPosition(fileName: string, position: number, limi
 //  getQuickInfoAtPosition
 //--------------------------------------------------------------------------
 
-
+/**
+ * Represent the result of a quickInfo request
+ */
 export type QuickInfo = {
     kind: string;
     kindModifiers: string;
@@ -284,7 +372,12 @@ export type QuickInfo = {
     documentation: ts.SymbolDisplayPart[];
 }
 
-
+/**
+ * Retrieve information about type/documentation for the givent file name at the given position.
+ * 
+ * @param fileName the absolute file name.
+ * @param position the position in the file where the informations are requested.
+ */
 export function getQuickInfoAtPosition(fileName:string, position: number): promise.Promise<QuickInfo> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
@@ -304,6 +397,9 @@ export function getQuickInfoAtPosition(fileName:string, position: number): promi
 //  getSignatureHelpItems
 //--------------------------------------------------------------------------
 
+/**
+ * Represent information about a function signature
+ */
 export type SignatureHelpItems = {
     items: ts.SignatureHelpItem[];
     applicableSpan: TextSpan;
@@ -312,7 +408,12 @@ export type SignatureHelpItems = {
     argumentCount: number;
 }
 
-
+/**
+ * Retrieve signature information about a function being called.
+ * 
+ * @param fileName the absolute file name.
+ * @param position the position in the file where the informations are requested.
+ */
 export function getSignatureHelpItems(fileName:string, position: number): promise.Promise<SignatureHelpItems> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
@@ -331,6 +432,9 @@ export function getSignatureHelpItems(fileName:string, position: number): promis
 //  getRenameInfo
 //--------------------------------------------------------------------------
 
+/**
+ * Represent renam information
+ */
 export type RenameInfo = {
     canRename: boolean;
     localizedErrorMessage: string;
@@ -341,6 +445,12 @@ export type RenameInfo = {
     triggerSpan: TextSpan;
 }
 
+/**
+ * Retrieve rename informations about a symbol at a given position.
+ * 
+ * @param fileName the absolute file name.
+ * @param position the position in the file where the rename informations are requested.
+ */
 export function getRenameInfo(fileName:string, position: number): promise.Promise<RenameInfo> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
@@ -362,7 +472,13 @@ export function getRenameInfo(fileName:string, position: number): promise.Promis
 //  getRenameInfo
 //--------------------------------------------------------------------------
 
-
+/**
+ * Retrieve locations where a rename must occurs.
+ * 
+ * @param fileName the absolute file name.
+ * @param position the position of the symbol to rename.
+ * @param findInComments if true the service will also look into comments.
+ */
 export function findRenameLocations(
         fileName:string, position: number, 
         findInStrings: boolean, findInComments: boolean
@@ -382,6 +498,9 @@ export function findRenameLocations(
 //  getDefinitionAtPosition
 //--------------------------------------------------------------------------
 
+/**
+ * Represent information about a typescript definition.
+ */
 export type DefinitionInfo = {
     fileName: string;
     textSpan: TextSpan;
@@ -391,6 +510,12 @@ export type DefinitionInfo = {
     containerName: string;
 }
 
+/**
+ * Retrieve informations about a typescript definition.
+ * 
+ * @param fileName the absolute file name.
+ * @param position the position of the definition in the file.
+ */
 export function getDefinitionAtPosition(fileName: string, position: number): promise.Promise<DefinitionInfo[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
@@ -410,12 +535,22 @@ export function getDefinitionAtPosition(fileName: string, position: number): pro
 //  getReferencesAtPosition
 //--------------------------------------------------------------------------
 
+/**
+ * Represent information about a reference.
+ */
 export type ReferenceEntry = {
     textSpan: TextSpan;
     fileName: string;
     isWriteAccess: boolean;
 }
 
+
+/**
+ * Retrieve a symbol references accros a project.
+ * 
+ * @param fileName the absolute file name.
+ * @param position the position of the symbol.
+ */
 export function getReferencesAtPosition(fileName: string, position: number): promise.Promise<ReferenceEntry[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
@@ -433,6 +568,13 @@ export function getReferencesAtPosition(fileName: string, position: number): pro
 //  getOccurrencesAtPosition
 //--------------------------------------------------------------------------
 
+
+/**
+ * Retrieve a symbol references accros a file.
+ * 
+ * @param fileName the absolute file name.
+ * @param position the position of the symbol.
+ */
 export function getOccurrencesAtPosition(fileName: string, position: number): promise.Promise<ReferenceEntry[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
@@ -450,7 +592,9 @@ export function getOccurrencesAtPosition(fileName: string, position: number): pr
 //  getNavigateToItems
 //--------------------------------------------------------------------------
 
-
+/**
+ * Retrieve navigation information
+ */
 export type NavigateToItem = {
     name: string;
     kind: string;
@@ -463,6 +607,12 @@ export type NavigateToItem = {
 }
 
 
+/**
+ * Retrieve information about navigation between files of the project
+ * 
+ * @param fileName the absolute file name.
+ * @param position the searched string.
+ */
 export function getNavigateToItems(fileName:string, search: string): promise.Promise<NavigateToItem[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
@@ -485,6 +635,9 @@ export function getNavigateToItems(fileName:string, search: string): promise.Pro
 //  getNavigationBarItems
 //--------------------------------------------------------------------------
 
+/**
+ * Represent a Nigation bar item
+ */
 export type NavigationBarItem = {
     text: string;
     kind: string;
@@ -496,6 +649,9 @@ export type NavigationBarItem = {
     grayed: boolean;
 }
 
+/**
+ * Convert a typescript navigation bar item to raw json format.
+ */
 function tsNavigationBarItemToNavigationBarItem(item: ts.NavigationBarItem) : NavigationBarItem {
     return {
         text: item.text,
@@ -509,6 +665,11 @@ function tsNavigationBarItemToNavigationBarItem(item: ts.NavigationBarItem) : Na
     }
 }
 
+/**
+ * Retrieve navigation bar for the givent file
+ * 
+ * @param fileName the absolute file name.
+ */
 export function getNavigationBarItems(fileName: string): promise.Promise<NavigationBarItem[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
@@ -522,12 +683,30 @@ export function getNavigationBarItems(fileName: string): promise.Promise<Navigat
 //--------------------------------------------------------------------------
 
 
+/**
+ * Represent a change to apply in the document for formatting.
+ */
 export type TextChange = {
+    /**
+     * The text span to replace.
+     */
     span: TextSpan;
+    
+    /**
+     * The new text to insert.
+     */
     newText: string;
 }
 
-export function getFormattingEditsForFile(fileName: string, options: ts.FormatCodeOptions, start: number, end: number): promise.Promise<TextChange[]> {
+/**
+ * Retrieve formating information for a file or range in a file.
+ * 
+ * @param fileName the absolute file name.
+ * @param options formatting options.
+ * @param start if start and end are provided the formatting will only be applied on that range.
+ * @param end if start and end are provided the formatting will only be applied on that range.
+ */
+export function getFormattingEditsForFile(fileName: string, options: ts.FormatCodeOptions, start?: number, end?: number): promise.Promise<TextChange[]> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
         if(typeof start === 'number' && typeof end === 'number') {
@@ -553,8 +732,20 @@ export function getFormattingEditsForFile(fileName: string, options: ts.FormatCo
 //  getFormattingEditsForRange
 //--------------------------------------------------------------------------
 
-
-export function getFormattingEditsAfterKeyStroke(fileName: string, options: ts.FormatCodeOptions, position: number, key: string): promise.Promise<TextChange[]> {
+/**
+ * Retrieve formating information after a key stroke (use for auto formating)
+ * 
+ * @param fileName the absolute file name.
+ * @param options formatting options.
+ * @param position the position where the key stroke occured.
+ * @param key the key.
+ */
+export function getFormattingEditsAfterKeyStroke(
+    fileName: string, 
+    options: ts.FormatCodeOptions, 
+    position: number, 
+    key: string): promise.Promise<TextChange[]> {
+    
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
         return languageService.getFormattingEditsAfterKeystroke(fileName, position, key, options)
@@ -562,8 +753,6 @@ export function getFormattingEditsAfterKeyStroke(fileName: string, options: ts.F
                 span: tsSpanToTextSpan(edit.span),
                 newText: edit.newText
             }))
-        
-        
     });
 }
 
@@ -572,7 +761,11 @@ export function getFormattingEditsAfterKeyStroke(fileName: string, options: ts.F
 //  getEmitOutput
 //--------------------------------------------------------------------------
 
-
+/**
+ * Retrieve emit output for a file name
+ * 
+ * @param fileName the absolute file name.
+ */
 export function getEmitOutput(fileName: string): promise.Promise<ts.EmitOutput> {
     return ProjectManager.getProjectForFile(fileName).then(project => {
         var languageService = project.getLanguageService();
