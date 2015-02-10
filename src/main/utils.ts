@@ -279,7 +279,28 @@ export function clone<T>(target: T): T {
     return assign(Array.isArray(target) ? [] : {}, target);
 }
 
+/**
+ * A recursive array
+ */
+interface RecursiveArray<T> extends Array<T | RecursiveArray<T>> { }
 
+/**
+ * flatten a recursive array
+ * 
+ * @param array the array to flatten
+ */
+export function flatten<T>(array: RecursiveArray<T>): Array<T> {
+    var result: T[] = [];
+    for (var i = 0, length = array.length; i < length; i++) {
+        var value: any = array[i];
+        if (Array.isArray(value)) {
+            result.push.apply(result, flatten(value));
+        } else  {
+            result.push(value)
+        }
+    }
+    return result;
+};
 //--------------------------------------------------------------------------
 //
 //  Path utils
