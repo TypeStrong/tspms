@@ -140,6 +140,37 @@ function createProjectFromConfig(projectName: string, config: TypeScriptProjectC
     });
 }
 
+/**
+ * Returns a temporary project for the given filename.
+ * This method will try to reuse the curent temp project if any and if it manage the given fileName.
+ * 
+ * @param fileName the absolute name of the typesrcript file for which projects are looked for.
+ */
+function getTempProjectForFile(fileName: string): promise.Promise<TypeScriptProject> {
+    //then we check if the current temp project has the file
+    if (tempProject && tempProject.getProjectFilesSet()[fileName]) {
+        return promise.Promise.resolve(tempProject);
+    }
+    
+    if (tempProject) {
+        tempProject.dispose();
+        tempProject = null;
+    }
+
+      
+    var config: TypeScriptProjectConfig = {
+        sources: [fileName],
+        compilerOptions: {
+            target: ts.ScriptTarget.Latest,
+            module: ts.ModuleKind.CommonJS,
+            noLib: false
+        }
+    }
+
+    tempProject = createProject(currentDir, config, fileSystem, workingSet);
+    return tempProject.init().then(() => tempProject);
+}
+
 //--------------------------------------------------------------------------
 //
 //  Public API
@@ -177,6 +208,9 @@ export function dispose(): void {
     });
 }
 
+
+
+
 /**
  * This function will try to find a project managing the given fileName. 
  * It will first try to retrieve a project that have that file matching the `sources` configuration of the project.
@@ -209,35 +243,47 @@ export function getProjectForFile(fileName: string): promise.Promise<TypeScriptP
             });
         }
 
-        //then we check if the current temp project has the file
-        if (!project) {
-            if (tempProject && tempProject.getProjectFilesSet()[fileName]) {
-                project = tempProject;
-            } else if (tempProject) {
-                tempProject.dispose();
-                tempProject = null;
-            }
+        if (project) {
+            return project;
         }
 
-        //then if still no project found we create the temp project
-        if (!project) {
-            var config: TypeScriptProjectConfig = {
-                sources: [fileName],
-                compilerOptions: {
-                    target: ts.ScriptTarget.Latest,
-                    module: ts.ModuleKind.CommonJS,
-                    noLib: false
-                }
-            }
-            
-            tempProject = createProject(currentDir, config, fileSystem, workingSet);
-            return tempProject.init().then(() => tempProject);
-        }
-
-        return project;
+        return getTempProjectForFile(fileName);
     });
 }
 
+
+/**
+ * This function will try to find all projects managing the given fileName. 
+ * If no project has been found a temp project will be instanciated/reused.
+ * 
+ * @param fileName the absolute name of the typesrcript file for which projects are looked for.
+ */
+export function getAllProjectsForFile(fileName: string): promise.Promise<TypeScriptProject[]> {
+    return queue.then((): any => {
+        var projects = utils.getMapValues(projectMap);
+            
+        //first we check for a project that have tha file as source 
+        projects = projects.filter(project => project.getProjectFileKind(fileName) !== ProjectFileKind.NONE);
+        
+        if (projects.length) {
+            return projects;
+        }
+
+        return getTempProjectForFile(fileName).then(project => [project]);
+    });
+}
+
+
+/**
+ * Retrieve all projects managed by the project manager
+ * 
+ * @param fileName the absolute name of the typesrcript file for which projects are looked for.
+ */
+export function getProjects(): promise.Promise<TypeScriptProject[]> {
+    return queue.then((): any => {
+        return utils.getMapValues(projectMap);
+    });
+}
 
 /* 
  * Update / delete / create projects according to changes in project configs map.
