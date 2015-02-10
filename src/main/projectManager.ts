@@ -279,9 +279,13 @@ export function getAllProjectsForFile(fileName: string): promise.Promise<TypeScr
  * 
  * @param fileName the absolute name of the typesrcript file for which projects are looked for.
  */
-export function getProjects(): promise.Promise<TypeScriptProject[]> {
+export function getAllProjects(): promise.Promise<TypeScriptProject[]> {
     return queue.then((): any => {
-        return utils.getMapValues(projectMap);
+        var result = utils.getMapValues(projectMap);
+        if (tempProject) {
+            result.push(tempProject);
+        }
+        return result;
     });
 }
 
