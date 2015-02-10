@@ -7,7 +7,7 @@ import fs = require('./fileSystem');
 import ws = require('./workingSet');
 import project = require('./project');
 import serviceUtils = require('./serviceUtils');
-import console = require('./logger');
+import Logger = require('./logger');
 import utils = require('./utils');
 
 
@@ -17,16 +17,26 @@ import utils = require('./utils');
 //
 //--------------------------------------------------------------------------
 
-export import Logger = console.Logger;
-
-export var injectLogger = console.injectLogger;
+/**
+ * Let the user inject logger used by the service.
+ * 
+ * @param info information logger.
+ * @param warn warning logger.
+ * @param error error logger.
+ */
+export var injectLogger = Logger.injectLogger;
 
 //--------------------------------------------------------------------------
 //
 //  Promise Injection
 //
 //--------------------------------------------------------------------------
-
+/**
+ * Let the user inject Promise library used by the service, 
+ * it must be an es6 spec comliant promise library
+ * 
+ * @param promise the Promise constructor of the injected library.
+ */
 export var injectPromiseLibrary = promise.injectPromiseLibrary;
 
 //--------------------------------------------------------------------------
@@ -64,7 +74,7 @@ export import Signal = utils.Signal;
 /**
  * Initializate the service
  * 
- * @param config the config used for the project managed
+ * @param config the ProjectManagerConfig
  */
 export function init(config: ProjectManagerConfig): promise.Promise<void> {
     return ProjectManager.init(config);
@@ -75,7 +85,7 @@ export function init(config: ProjectManagerConfig): promise.Promise<void> {
 //--------------------------------------------------------------------------
 
 /**
- * Update the configurations of the projects managed by this services.
+ * Update the configurations of the projects managed by this service.
  * 
  * @param configs 
  *   A map project name to project config file.
@@ -87,6 +97,7 @@ export function init(config: ProjectManagerConfig): promise.Promise<void> {
 export function updateProjectConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }): promise.Promise<void> {
     return ProjectManager.updateProjectConfigs(configs);
 }
+
 
 /**
  * dispose the service

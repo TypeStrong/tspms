@@ -7,8 +7,8 @@ import ws = require('./workingSet');
 import ts = require('typescript');
 import project = require('./project');
 import utils = require('./utils');
-import console  = require('./logger');
-import compilerManager = require('./compilerManager');
+import Logger  = require('./logger');
+import CompilerManager = require('./compilerManager');
 
 import ProjectFileKind = project.ProjectFileKind;
 import TypeScriptProject = project.TypeScriptProject;
@@ -133,7 +133,7 @@ function createProjectFromConfig(projectName: string, config: TypeScriptProjectC
     return project.init().then(() => {
         projectMap[projectName] = project;
     }, () => {
-        console.error('could not create project:' + projectName);
+        Logger.error('could not create project:' + projectName);
     });
 }
 
@@ -154,7 +154,7 @@ export function init(config: ProjectManagerConfig): promise.Promise<void> {
     fileSystem = config.fileSystem;
     projectConfigs = config.projectConfigs;
     
-    compilerManager.init(config.fileSystem, config.defaultLibFileName);
+    CompilerManager.init(config.fileSystem, config.defaultLibFileName);
 
     
     return queue.reset(fileSystem.getProjectRoot().then(rootDir => {
@@ -170,7 +170,7 @@ export function init(config: ProjectManagerConfig): promise.Promise<void> {
 export function dispose(): void {
     queue.then(() => {
         disposeProjects();
-        compilerManager.dispose();
+        CompilerManager.dispose();
     });
 }
 

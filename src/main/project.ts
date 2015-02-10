@@ -6,11 +6,11 @@ import promise = require('./promise');
 import fs = require('./fileSystem');
 import ws = require('./workingSet');
 import utils = require('./utils');
-import console = require('./logger');
+import Logger = require('./logger');
 import LanguageServiceHost = require('./languageServiceHost');
-import compilerManager = require('./compilerManager');
+import CompilerManager = require('./compilerManager');
 
-import TypeScriptInfo = compilerManager.TypeScriptInfo;
+import TypeScriptInfo = CompilerManager.TypeScriptInfo;
 import Map = utils.Map;
 import Set = utils.Set;
 
@@ -443,16 +443,16 @@ export function createProject(
         return queue.reset(
             new promise.Promise<TypeScriptInfo>((resolve, reject) => {
                 if (!compilerDirectory) {
-                    resolve(compilerManager.getDefaultTypeScriptInfo())
+                    resolve(CompilerManager.getDefaultTypeScriptInfo())
                 } else {
                     resolve(
-                        compilerManager
+                        CompilerManager
                         .acquireCompiler(_config.compilerDirectory)
                         .catch(e => {
                             //TODO instead of silently returning default we should handle this error in project
                             //manager and return an error in the linter
-                            console.warn('could not retrieve typescript compiler at path: ' + compilerDirectory);
-                            return compilerManager.getDefaultTypeScriptInfo();
+                            Logger.warn('could not retrieve typescript compiler at path: ' + compilerDirectory);
+                            return CompilerManager.getDefaultTypeScriptInfo();
                         })
                     );
                 } 
@@ -509,7 +509,7 @@ export function createProject(
         workingSet.workingSetChanged.remove(workingSetChangedHandler);
         workingSet.documentEdited.remove(documentEditedHandler);
         fileSystem.projectFilesChanged.remove(filesChangeHandler);
-        compilerManager.releaseCompiler(typeScriptInfo);
+        CompilerManager.releaseCompiler(typeScriptInfo);
         languageService.dispose();
     }
     

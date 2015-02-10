@@ -34,7 +34,7 @@ export var error: (message?: any, ...optionalParams: any[]) => void = noop;
 declare var exports: any;
 
 /**
- * let the user inject logger used by the service.
+ * Let the user inject logger used by the service.
  * 
  * @param info information logger.
  * @param warn warning logger.
