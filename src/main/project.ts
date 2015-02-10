@@ -10,6 +10,8 @@ import console              = require('./logger');
 import LanguageServiceHost  = require('./languageServiceHost');
 import compilerManager      = require('./compilerManager');
 import TypeScriptInfo       = compilerManager.TypeScriptInfo;
+import Map                  = utils.Map;
+import Set                  = utils.Set;
 
 //--------------------------------------------------------------------------
 //
@@ -87,7 +89,7 @@ export interface TypeScriptProject {
     /**
      * return the set of files contained in the project
      */
-    getProjectFilesSet(): { [path :string]: boolean };
+    getProjectFilesSet(): Set;
     
     /**
      * for a given path, give the relation between the project an the associated file
@@ -145,12 +147,12 @@ export function createProject(
     /**
      * Map path to content
      */
-    var projectFilesSet: { [string: string]: boolean };
+    var projectFilesSet: Set;
     
     /**
      * store file references
      */
-    var references:{ [string: string]: { [string: string]: boolean } };
+    var references: Map<Set>;
     
     
     /**
@@ -163,9 +165,6 @@ export function createProject(
      * info for the curently use typescript compiler
      */
     var typeScriptInfo: TypeScriptInfo;
-    
-    
-    
     
     
     /**
@@ -257,7 +256,7 @@ export function createProject(
      */
     function updateFile(fileName: string) {
         fileSystem.readFile(fileName).then(content => {
-            var oldPaths = utils.createMap(getReferencedOrImportedFiles(fileName));
+            var oldPaths = utils.arrayToSet(getReferencedOrImportedFiles(fileName));
             languageServiceHost.updateScript(fileName, content);
             updateReferences(fileName, oldPaths);
         });
@@ -326,7 +325,7 @@ export function createProject(
      * @param fileName the absolute path of the file
      * @param oldFileReferences list of file this file referenced before being updated
      */
-    function updateReferences(fileName: string, oldFileReferences: { [key: string]: boolean}) {
+    function updateReferences(fileName: string, oldFileReferences: Set) {
         getReferencedOrImportedFiles(fileName).forEach(referencedPath => {
             delete oldFileReferences[referencedPath];
             if (!projectFilesSet[referencedPath]) {
@@ -401,7 +400,7 @@ export function createProject(
     function documentEditedHandler(record: ws.DocumentChangeRecord) {
         queue.then(() => {
             if (projectFilesSet[record.path]) {
-                var oldPaths = utils.createMap(getReferencedOrImportedFiles(record.path));
+                var oldPaths = utils.arrayToSet(getReferencedOrImportedFiles(record.path));
                 if (record.documentText) {
                     languageServiceHost.updateScript(record.path, record.documentText);
                 } else {

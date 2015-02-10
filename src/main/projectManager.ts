@@ -17,6 +17,7 @@ import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 import utils = require('./utils');
 import console  = require('./logger');
 import compilerManager = require('./compilerManager');
+import Map = utils.Map;
 
 
 
@@ -61,7 +62,7 @@ var workingSet: ws.IWorkingSet;
 /**
  * a map containing the projects 
  */
-var projectMap: { [key: string]: TypeScriptProject } = {};
+var projectMap: Map<TypeScriptProject> = Object.create(null);
 
 /**
  * tempory Project used for typescript file 
@@ -85,7 +86,7 @@ var queue = utils.createPromiseQueue();
 var defaultTypeScriptLocation: string;
 
 
-var projectConfigs: { [projectId: string]: TypeScriptProjectConfig; };
+var projectConfigs: Map<TypeScriptProjectConfig>;
 
 
 //-------------------------------

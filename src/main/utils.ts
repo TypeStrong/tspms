@@ -131,12 +131,7 @@ export function clone<T>(target: T): T {
 }
 
 
-export function createMap(arr: string[]): { [string: string]: boolean} {
-    return arr.reduce((result: { [string: string]: boolean}, key: string) => {
-        result[key] = true;
-        return result;
-    }, <{ [string: string]: boolean}>{});
-}
+
 
 
 /**
@@ -345,3 +340,18 @@ export function getHash(content: string): string {
     shasum.update(content, 'utf8');
     return shasum.digest('hex').toString();
 }
+
+
+export interface Map<T> {
+    [key: string]: T;
+}
+
+export type Set = Map<boolean>;
+
+export function arrayToSet(arr: string[]): Set {
+    return arr.reduce((result: Set, key: string) => {
+        result[key] = true;
+        return result;
+    }, Object.create(null));
+}
+

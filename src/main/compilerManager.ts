@@ -5,6 +5,7 @@ import fs = require('./fileSystem');
 import promise = require('./promise');
 import path = require('path');
 import utils = require('./utils');
+import Map = utils.Map;
 
 /**
  * @module CompilerManager
@@ -74,13 +75,13 @@ type TypeScriptMeta = {
  * @private
  * A map compilerDirectory => TypeScriptInfo
  */
-var typeScriptInfos: { [fileName: string]: TypeScriptInfo } = Object.create(null);
+var typeScriptInfos: Map<TypeScriptInfo> = Object.create(null);
 
 /** 
  * @private
  * A map compilerDirectory => TypeScriptInfo
  */
-var typeScriptInfoMetas: { [fileName: string]: TypeScriptMeta } = Object.create(null);
+var typeScriptMetas: Map<TypeScriptMeta> = Object.create(null);
 
 /**
  * the fileSystem used by the compiler manager
@@ -117,7 +118,7 @@ function createCompiler(compilerDirectory: string, content: string, defaultLibFi
         documentRegistry: generatedTs.createDocumentRegistry()
     };
 
-    typeScriptInfoMetas[compilerDirectory] = {
+    typeScriptMetas[compilerDirectory] = {
         hash: hash,
         count: 1
     }
@@ -140,7 +141,7 @@ function createCompiler(compilerDirectory: string, content: string, defaultLibFi
 export function init(fs: fs.IFileSystem, defaultLibFileName: string) {
     fileSystem = fs;
     typeScriptInfos = Object.create(null);
-    typeScriptInfoMetas = Object.create(null);
+    typeScriptMetas = Object.create(null);
     defaultTypeScriptInfo = {
         compilerDirectory: '',
         ts,
@@ -168,7 +169,7 @@ export function acquireCompiler(compilerDirectory: string): promise.Promise<Type
     var defaultLibFileName = path.join(compilerDirectory, 'bin', 'lib.d.ts');
 
     return fileSystem.readFile(typescriptServicesFileName).then(content => {
-        var meta = typeScriptInfoMetas[compilerDirectory];
+        var meta = typeScriptMetas[compilerDirectory];
         var info = typeScriptInfos[compilerDirectory];
         var hash = utils.getHash(content);
 
@@ -189,11 +190,11 @@ export function acquireCompiler(compilerDirectory: string): promise.Promise<Type
 export function releaseCompiler(typeScriptInfo: TypeScriptInfo): void {
     var cached = typeScriptInfos[typeScriptInfo.compilerDirectory];
     if (cached === typeScriptInfo) {
-        var meta = typeScriptInfoMetas[typeScriptInfo.compilerDirectory];
+        var meta = typeScriptMetas[typeScriptInfo.compilerDirectory];
         meta.count--;
         if (meta.count === 0) {
             delete typeScriptInfos[typeScriptInfo.compilerDirectory];
-            delete typeScriptInfoMetas[typeScriptInfo.compilerDirectory];
+            delete typeScriptMetas[typeScriptInfo.compilerDirectory];
         }
     }
 }
@@ -203,7 +204,7 @@ export function releaseCompiler(typeScriptInfo: TypeScriptInfo): void {
  */
 export function dispose() {
     typeScriptInfos = Object.create(null);
-    typeScriptInfoMetas = Object.create(null);
+    typeScriptMetas = Object.create(null);
     defaultTypeScriptInfo = null;
     fileSystem = null;
 }
