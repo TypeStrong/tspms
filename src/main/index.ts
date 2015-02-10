@@ -447,22 +447,28 @@ export type RenameInfo = {
 
 /**
  * Retrieve rename informations about a symbol at a given position.
+ * This method will look into all the projects, and returns the first positive renameInfo found.
  * 
  * @param fileName the absolute file name.
  * @param position the position in the file where the rename informations are requested.
  */
 export function getRenameInfo(fileName:string, position: number): promise.Promise<RenameInfo> {
-    return ProjectManager.getProjectForFile(fileName).then(project => {
-        var languageService = project.getLanguageService();
-        var info = languageService.getRenameInfo(fileName, position)
-        return {
-            canRename: info.canRename,
-            localizedErrorMessage: info.localizedErrorMessage,
-            displayName: info.displayName,
-            fullDisplayName: info.fullDisplayName,
-            kind: info.kind,
-            kindModifiers: info.kindModifiers,
-            triggerSpan: tsSpanToTextSpan(info.triggerSpan)
+    return ProjectManager.getAllProjectsForFile(fileName).then(projects => {
+        for (var i = 0; i < projects.length; i++) {
+            var project = projects[i];
+            var languageService = project.getLanguageService();
+            var info = languageService.getRenameInfo(fileName, position);
+            if (info && info.canRename || i === projects.length -1) {
+                return {
+                    canRename: info.canRename,
+                    localizedErrorMessage: info.localizedErrorMessage,
+                    displayName: info.displayName,
+                    fullDisplayName: info.fullDisplayName,
+                    kind: info.kind,
+                    kindModifiers: info.kindModifiers,
+                    triggerSpan: tsSpanToTextSpan(info.triggerSpan)
+                }
+            }
         }
     });
 }
@@ -473,7 +479,8 @@ export function getRenameInfo(fileName:string, position: number): promise.Promis
 //--------------------------------------------------------------------------
 
 /**
- * Retrieve locations where a rename must occurs.
+ * Retrieve locations where a rename must occurs. 
+ * This methods apply to all the project that manage the given file.
  * 
  * @param fileName the absolute file name.
  * @param position the position of the symbol to rename.
@@ -484,13 +491,22 @@ export function findRenameLocations(
         findInStrings: boolean, findInComments: boolean
     ): promise.Promise<{ textSpan: TextSpan; fileName: string;}[]> {
     
-    return ProjectManager.getProjectForFile(fileName).then(project => {
-        var languageService = project.getLanguageService();
-        return languageService.findRenameLocations(fileName, position, findInStrings, findInComments)
-            .map(location => ({
-                textSpan: tsSpanToTextSpan(location.textSpan),
-                fileName: location.fileName
-            }));
+    return ProjectManager.getAllProjectsForFile(fileName).then(projects => {
+        return utils.flatten<{ textSpan: TextSpan; fileName: string;}>(
+            projects.map(project => {
+                var languageService = project.getLanguageService();
+                return languageService.findRenameLocations(fileName, position, findInStrings, findInComments)
+                    .map(location => ({
+                        textSpan: tsSpanToTextSpan(location.textSpan),
+                        fileName: location.fileName
+                    }));
+            })
+        ).filter((info, index, array) => {
+            return array.slice(index + 1).every(info1 => (
+                 info1.fileName !== info.fileName ||
+                 info1.textSpan.start !== info.textSpan.start
+            ));
+        })
     });
 }
 
@@ -547,19 +563,29 @@ export type ReferenceEntry = {
 
 /**
  * Retrieve a symbol references accros a project.
+ * This method look into every project that manage the given file.
  * 
  * @param fileName the absolute file name.
  * @param position the position of the symbol.
  */
 export function getReferencesAtPosition(fileName: string, position: number): promise.Promise<ReferenceEntry[]> {
-    return ProjectManager.getProjectForFile(fileName).then(project => {
-        var languageService = project.getLanguageService();
-        return languageService.getReferencesAtPosition(fileName, position)
-            .map(ref => ({
-                fileName: ref.fileName,
-                textSpan: tsSpanToTextSpan(ref.textSpan),
-                isWriteAccess: ref.isWriteAccess
-            }))
+    return ProjectManager.getAllProjectsForFile(fileName).then(projects => {
+        return utils.flatten<{ textSpan: TextSpan; fileName: string;}>(
+            projects.map(project => {
+                var languageService = project.getLanguageService();
+                return languageService.getReferencesAtPosition(fileName, position)
+                    .map(ref => ({
+                        fileName: ref.fileName,
+                        textSpan: tsSpanToTextSpan(ref.textSpan),
+                        isWriteAccess: ref.isWriteAccess
+                    }))
+            })
+        ).filter((info, index, array) => {
+            return array.slice(index + 1).every(info1 => (
+                 info1.fileName !== info.fileName ||
+                 info1.textSpan.start !== info.textSpan.start
+            ));
+        });
     });
 }
 
@@ -610,23 +636,31 @@ export type NavigateToItem = {
 /**
  * Retrieve information about navigation between files of the project
  * 
- * @param fileName the absolute file name.
  * @param position the searched string.
  */
-export function getNavigateToItems(fileName:string, search: string): promise.Promise<NavigateToItem[]> {
-    return ProjectManager.getProjectForFile(fileName).then(project => {
-        var languageService = project.getLanguageService();
-        return languageService.getNavigateToItems(search)
-            .map(item => ({
-                name: item.name,
-                kind: item.kind,
-                kindModifiers: item.kindModifiers,
-                matchKind: item.matchKind,
-                fileName: item.fileName,
-                textSpan: tsSpanToTextSpan(item.textSpan),
-                containerName: item.containerName,
-                containerKind: item.containerKind
-            }))
+export function getNavigateToItems(search: string): promise.Promise<NavigateToItem[]> {
+    return ProjectManager.getAllProjects().then(projects => {
+        return utils.flatten<{ textSpan: TextSpan; fileName: string;}>(
+            projects.map(project => {
+                var languageService = project.getLanguageService();
+                return languageService.getNavigateToItems(search)
+                    .map(item => ({
+                        name: item.name,
+                        kind: item.kind,
+                        kindModifiers: item.kindModifiers,
+                        matchKind: item.matchKind,
+                        fileName: item.fileName,
+                        textSpan: tsSpanToTextSpan(item.textSpan),
+                        containerName: item.containerName,
+                        containerKind: item.containerKind
+                    }))
+            })
+        ).filter((info, index, array) => {
+            return array.slice(index + 1).every(info1 => (
+                 info1.fileName !== info.fileName ||
+                 info1.textSpan.start !== info.textSpan.start
+            ));
+        });
     });
 }
 
