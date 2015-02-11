@@ -76,7 +76,7 @@ var functionsDeclarations: ts.FunctionDeclaration[] = [];
 var objectDeclarations: ts.InterfaceDeclaration[] = [];
 
 
-function visitNode(node: ts.Node) {
+function visitNode(node: ts.Node, fromImport = false) {
     switch (node.kind) {
         case ts.SyntaxKind.ImportDeclaration:
             if (node.flags & ts.NodeFlags.Export) {
@@ -84,7 +84,7 @@ function visitNode(node: ts.Node) {
                 if (importDeclaration.moduleReference.kind !== ts.SyntaxKind.ExternalModuleReference) {
                     var type = checker.getTypeAtLocation(importDeclaration.moduleReference);
                     if (type.symbol.declarations[0]) {
-                         visitNode(type.symbol.declarations[0]);
+                         visitNode(type.symbol.declarations[0], true);
                     }
                    
                 }
@@ -100,6 +100,13 @@ function visitNode(node: ts.Node) {
         case ts.SyntaxKind.EnumDeclaration:
             if (node.flags & ts.NodeFlags.Export) {
                 objectDeclarations.push(<any>node);
+            }
+            return;
+            
+        
+        case ts.SyntaxKind.TypeLiteral:
+            if (fromImport && node.parent.kind === ts.SyntaxKind.TypeAliasDeclaration) {
+                visitNode(node.parent);
             }
             return;
             
