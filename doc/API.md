@@ -5,7 +5,7 @@
 
 ### injectLogger
 
-see [logger.ts](../src/main/logger.ts#L34-L34).
+see [logger.ts](../src/main/logger.ts#L43-L47).
 
 ```
 injectLogger(info: Logger, warn: Logger, error: Logger): void
@@ -19,7 +19,7 @@ Let the user inject logger used by the service.
 
 ### injectPromiseLibrary
 
-see [promise.ts](../src/main/promise.ts#L254-L254).
+see [promise.ts](../src/main/promise.ts#L262-L264).
 
 ```
 injectPromiseLibrary(promise: typeof Promise): void
@@ -32,7 +32,7 @@ it must be an es6 spec comliant promise library
 
 ### init
 
-see [index.ts](../src/main/index.ts#L108-L108).
+see [index.ts](../src/main/index.ts#L119-L121).
 
 ```
 init(config: ProjectManagerConfig): Promise<void>
@@ -44,7 +44,7 @@ Initializate the service.
 
 ### updateProjectConfigs
 
-see [index.ts](../src/main/index.ts#L121-L121).
+see [index.ts](../src/main/index.ts#L137-L139).
 
 ```
 updateProjectConfigs(configs: { [projectId: string]: TypeScriptProjectConfig; }): Promise<void>
@@ -60,7 +60,7 @@ Otherwise the project will be updated accordingly to the new configuration
 
 ### dispose
 
-see [index.ts](../src/main/index.ts#L139-L139).
+see [index.ts](../src/main/index.ts#L145-L147).
 
 ```
 dispose(): void
@@ -70,7 +70,7 @@ Dispose the service.
 
 ### getDiagnosticsForFile
 
-see [index.ts](../src/main/index.ts#L234-L234).
+see [index.ts](../src/main/index.ts#L245-L267).
 
 ```
 getDiagnosticsForFile(fileName: string, allErrors?: boolean): Promise<Diagnostics[]>
@@ -86,7 +86,7 @@ if there is error in the precedent one
 
 ### getCompletionAtPosition
 
-see [index.ts](../src/main/index.ts#L287-L287).
+see [index.ts](../src/main/index.ts#L300-L357).
 
 ```
 getCompletionAtPosition(fileName: string, position: number, limit?: number, skip?: number): Promise<CompletionResult>
@@ -102,7 +102,7 @@ return a promise resolving to a list of completion proposals.
 
 ### getQuickInfoAtPosition
 
-see [index.ts](../src/main/index.ts#L373-L373).
+see [index.ts](../src/main/index.ts#L381-L393).
 
 ```
 getQuickInfoAtPosition(fileName: string, position: number): Promise<QuickInfo>
@@ -115,7 +115,7 @@ Retrieve information about type/documentation for the givent file name at the gi
 
 ### getSignatureHelpItems
 
-see [index.ts](../src/main/index.ts#L409-L409).
+see [index.ts](../src/main/index.ts#L417-L429).
 
 ```
 getSignatureHelpItems(fileName: string, position: number): Promise<SignatureHelpItems>
@@ -128,7 +128,7 @@ Retrieve signature information about a function being called.
 
 ### getRenameInfo
 
-see [index.ts](../src/main/index.ts#L446-L446).
+see [index.ts](../src/main/index.ts#L455-L474).
 
 ```
 getRenameInfo(fileName: string, position: number): Promise<RenameInfo>
@@ -142,7 +142,7 @@ This method will look into all the projects, and returns the first positive rena
 
 ### findRenameLocations
 
-see [index.ts](../src/main/index.ts#L474-L474).
+see [index.ts](../src/main/index.ts#L489-L511).
 
 ```
 findRenameLocations(fileName: string, position: number, findInStrings: boolean, findInComments: boolean): Promise<{ textSpan: TextSpan; fileName: string;}[]>
@@ -158,7 +158,7 @@ This methods apply to all the project that manage the given file.
 
 ### getDefinitionAtPosition
 
-see [index.ts](../src/main/index.ts#L527-L527).
+see [index.ts](../src/main/index.ts#L535-L548).
 
 ```
 getDefinitionAtPosition(fileName: string, position: number): Promise<DefinitionInfo[]>
@@ -171,7 +171,7 @@ Retrieve informations about a typescript definition.
 
 ### getReferencesAtPosition
 
-see [index.ts](../src/main/index.ts#L561-L561).
+see [index.ts](../src/main/index.ts#L571-L590).
 
 ```
 getReferencesAtPosition(fileName: string, position: number): Promise<ReferenceEntry[]>
@@ -185,7 +185,7 @@ This method look into every project that manage the given file.
 
 ### getOccurrencesAtPosition
 
-see [index.ts](../src/main/index.ts#L590-L590).
+see [index.ts](../src/main/index.ts#L604-L614).
 
 ```
 getOccurrencesAtPosition(fileName: string, position: number): Promise<ReferenceEntry[]>
@@ -198,7 +198,7 @@ Retrieve a symbol references accros a file.
 
 ### getNavigateToItems
 
-see [index.ts](../src/main/index.ts#L633-L633).
+see [index.ts](../src/main/index.ts#L641-L665).
 
 ```
 getNavigateToItems(search: string): Promise<NavigateToItem[]>
@@ -210,7 +210,7 @@ Retrieve information about navigation between files of the project
 
 ### getNavigationBarItems
 
-see [index.ts](../src/main/index.ts#L700-L700).
+see [index.ts](../src/main/index.ts#L707-L712).
 
 ```
 getNavigationBarItems(fileName: string): Promise<NavigationBarItem[]>
@@ -222,7 +222,7 @@ Retrieve navigation bar for the givent file
 
 ### getFormattingEditsForFile
 
-see [index.ts](../src/main/index.ts#L733-L733).
+see [index.ts](../src/main/index.ts#L743-L761).
 
 ```
 getFormattingEditsForFile(fileName: string, options: ts.FormatCodeOptions, start?: number, end?: number): Promise<TextChange[]>
@@ -237,7 +237,7 @@ Retrieve formating information for a file or range in a file.
 
 ### getFormattingEditsAfterKeyStroke
 
-see [index.ts](../src/main/index.ts#L761-L761).
+see [index.ts](../src/main/index.ts#L777-L791).
 
 ```
 getFormattingEditsAfterKeyStroke(fileName: string, options: ts.FormatCodeOptions, position: number, key: string): Promise<TextChange[]>
@@ -252,7 +252,7 @@ Retrieve formating information after a key stroke (use for auto formating)
 
 ### getEmitOutput
 
-see [index.ts](../src/main/index.ts#L791-L791).
+see [index.ts](../src/main/index.ts#L803-L808).
 
 ```
 getEmitOutput(fileName: string): Promise<ts.EmitOutput>
@@ -267,7 +267,7 @@ Retrieve emit output for a file name
 
 ### IFileSystem
 
-see [fileSystem.ts](../src/main/fileSystem.ts#L6-L6).
+see [fileSystem.ts](../src/main/fileSystem.ts#L17-L40).
   
 Interface abstracting file system to provide adapter to the service.
 
@@ -300,7 +300,7 @@ export interface IFileSystem {
 
 ### FileChangeKind
 
-see [fileSystem.ts](../src/main/fileSystem.ts#L40-L40).
+see [fileSystem.ts](../src/main/fileSystem.ts#L51-L71).
   
 An Enum representing the kind of change that migth occur in the fileSysem.
 
@@ -330,7 +330,7 @@ export const enum FileChangeKind {
 
 ### IWorkingSet
 
-see [workingSet.ts](../src/main/workingSet.ts#L6-L6).
+see [workingSet.ts](../src/main/workingSet.ts#L17-L32).
   
 A service that will reflect files in the working set of the editor.
 
@@ -355,7 +355,7 @@ export interface IWorkingSet {
 
 ### WorkingSetChangeKind
 
-see [workingSet.ts](../src/main/workingSet.ts#L53-L53).
+see [workingSet.ts](../src/main/workingSet.ts#L58-L68).
   
 An Enum listing the kind of change that might occur in the working set.
 
@@ -375,7 +375,7 @@ export const enum WorkingSetChangeKind {
 
 ### ISignal
 
-see [utils.ts](../src/main/utils.ts#L126-L126).
+see [utils.ts](../src/main/utils.ts#L137-L169).
   
 C# like events and delegates for typed events dispatching.
 
@@ -417,7 +417,7 @@ export interface ISignal<T> {
 
 ### TextSpan
 
-see [index.ts](../src/main/index.ts#L147-L147).
+see [index.ts](../src/main/index.ts#L163-L173).
   
 
 
@@ -437,7 +437,7 @@ export type TextSpan = {
 
 ### Diagnostics
 
-see [index.ts](../src/main/index.ts#L194-L194).
+see [index.ts](../src/main/index.ts#L204-L234).
   
 
 
@@ -477,7 +477,7 @@ export type Diagnostics = {
 
 ### CompletionResult
 
-see [index.ts](../src/main/index.ts#L267-L267).
+see [index.ts](../src/main/index.ts#L277-L287).
   
 
 
@@ -497,7 +497,7 @@ export type CompletionResult = {
 
 ### QuickInfo
 
-see [index.ts](../src/main/index.ts#L357-L357).
+see [index.ts](../src/main/index.ts#L367-L373).
   
 
 
@@ -513,7 +513,7 @@ export type QuickInfo = {
 
 ### SignatureHelpItems
 
-see [index.ts](../src/main/index.ts#L393-L393).
+see [index.ts](../src/main/index.ts#L403-L409).
   
 
 
@@ -529,7 +529,7 @@ export type SignatureHelpItems = {
 
 ### RenameInfo
 
-see [index.ts](../src/main/index.ts#L429-L429).
+see [index.ts](../src/main/index.ts#L438-L446).
   
 
 
@@ -547,7 +547,7 @@ export type RenameInfo = {
 
 ### DefinitionInfo
 
-see [index.ts](../src/main/index.ts#L511-L511).
+see [index.ts](../src/main/index.ts#L520-L527).
   
 
 
@@ -564,7 +564,7 @@ export type DefinitionInfo = {
 
 ### ReferenceEntry
 
-see [index.ts](../src/main/index.ts#L548-L548).
+see [index.ts](../src/main/index.ts#L557-L561).
   
 
 
@@ -578,7 +578,7 @@ export type ReferenceEntry = {
 
 ### NavigateToItem
 
-see [index.ts](../src/main/index.ts#L614-L614).
+see [index.ts](../src/main/index.ts#L624-L633).
   
 
 
@@ -597,7 +597,7 @@ export type NavigateToItem = {
 
 ### NavigationBarItem
 
-see [index.ts](../src/main/index.ts#L665-L665).
+see [index.ts](../src/main/index.ts#L675-L684).
   
 
 
@@ -616,7 +616,7 @@ export type NavigationBarItem = {
 
 ### TextChange
 
-see [index.ts](../src/main/index.ts#L712-L712).
+see [index.ts](../src/main/index.ts#L723-L733).
   
 
 

@@ -158,8 +158,8 @@ function getNodePosLink(node: ts.Node) {
     var sourceFile = ts.getSourceFileOfNode(node);
     var relativeFileName = path.relative(docDir, sourceFile.filename);
     var baseName = path.basename(sourceFile.filename)
-    var start = ts.getLineAndCharacterOfPosition(sourceFile.getLineStarts(), node.pos);
-    var end = ts.getLineAndCharacterOfPosition(sourceFile.getLineStarts(), node.pos);
+    var start = ts.getLineAndCharacterOfPosition(sourceFile.getLineStarts(), node.getStart());
+    var end = ts.getLineAndCharacterOfPosition(sourceFile.getLineStarts(), node.getEnd());
     
     return `[${baseName}](${relativeFileName}#L${start.line}-L${end.line})`
 }
