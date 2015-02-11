@@ -1,8 +1,8 @@
-declare module 'typescript-project-services/lib/compilerManager' {
+declare module 'tspms/lib/compilerManager' {
 
 import ts = require('typescript');
-import fs = require('typescript-project-services/lib/fileSystem');
-import promise = require('typescript-project-services/lib/promise');
+import fs = require('tspms/lib/fileSystem');
+import promise = require('tspms/lib/promise');
 /**
  * @module CompilerManager
  *
@@ -65,10 +65,10 @@ export function dispose(): void;
 
 }
 
-declare module 'typescript-project-services/lib/fileSystem' {
+declare module 'tspms/lib/fileSystem' {
 
-import promise = require('typescript-project-services/lib/promise');
-import utils = require('typescript-project-services/lib/utils');
+import promise = require('tspms/lib/promise');
+import utils = require('tspms/lib/utils');
 import ISignal = utils.ISignal;
 /**
  * Interface abstracting file system to provide adapter to the service.
@@ -131,7 +131,7 @@ export type FileChangeRecord = {
 
 }
 
-declare module 'typescript-project-services/lib/languageServiceHost' {
+declare module 'tspms/lib/languageServiceHost' {
 
 import ts = require('typescript');
 /**
@@ -206,7 +206,7 @@ export = LanguageServiceHost;
 
 }
 
-declare module 'typescript-project-services/lib/logger' {
+declare module 'tspms/lib/logger' {
 
 /**
  * @module Logger
@@ -243,15 +243,15 @@ export function injectLogger(info: Logger, warn: Logger, error: Logger): void;
 
 }
 
-declare module 'typescript-project-services/lib/project' {
+declare module 'tspms/lib/project' {
 
 import ts = require('typescript');
-import promise = require('typescript-project-services/lib/promise');
-import fs = require('typescript-project-services/lib/fileSystem');
-import ws = require('typescript-project-services/lib/workingSet');
-import utils = require('typescript-project-services/lib/utils');
-import LanguageServiceHost = require('typescript-project-services/lib/languageServiceHost');
-import CompilerManager = require('typescript-project-services/lib/compilerManager');
+import promise = require('tspms/lib/promise');
+import fs = require('tspms/lib/fileSystem');
+import ws = require('tspms/lib/workingSet');
+import utils = require('tspms/lib/utils');
+import LanguageServiceHost = require('tspms/lib/languageServiceHost');
+import CompilerManager = require('tspms/lib/compilerManager');
 import TypeScriptInfo = CompilerManager.TypeScriptInfo;
 import Set = utils.Set;
 /**
@@ -343,13 +343,13 @@ export function createProject(currentDir: string, config: TypeScriptProjectConfi
 
 }
 
-declare module 'typescript-project-services/lib/projectManager' {
+declare module 'tspms/lib/projectManager' {
 
-import promise = require('typescript-project-services/lib/promise');
-import fs = require('typescript-project-services/lib/fileSystem');
-import ws = require('typescript-project-services/lib/workingSet');
-import project = require('typescript-project-services/lib/project');
-import utils = require('typescript-project-services/lib/utils');
+import promise = require('tspms/lib/promise');
+import fs = require('tspms/lib/fileSystem');
+import ws = require('tspms/lib/workingSet');
+import project = require('tspms/lib/project');
+import utils = require('tspms/lib/utils');
 import TypeScriptProject = project.TypeScriptProject;
 import TypeScriptProjectConfig = project.TypeScriptProjectConfig;
 import Map = utils.Map;
@@ -419,7 +419,7 @@ export function updateProjectConfigs(configs: Map<TypeScriptProjectConfig>): pro
 
 }
 
-declare module 'typescript-project-services/lib/promise' {
+declare module 'tspms/lib/promise' {
 
 export interface Thenable<R> {
     then<U>(onFulfill?: (value: R) => Thenable<U> | U, onReject?: (error: any) => Thenable<U> | U): Promise<U>;
@@ -444,7 +444,7 @@ export function injectPromiseLibrary(promise: typeof Promise): void;
 
 }
 
-declare module 'typescript-project-services/lib/serviceUtils' {
+declare module 'tspms/lib/serviceUtils' {
 
 import ts = require('typescript');
 import SourceFile = ts.SourceFile;
@@ -463,10 +463,10 @@ export function isKeyword(token: SyntaxKind, typeScript: typeof ts): boolean;
 
 }
 
-declare module 'typescript-project-services/lib/utils' {
+declare module 'tspms/lib/utils' {
 
 import minimatch = require('minimatch');
-import promise = require('typescript-project-services/lib/promise');
+import promise = require('tspms/lib/promise');
 /**
  * A PromiseQueue, used to insure that async task are executed sequentially.
  */
@@ -630,10 +630,10 @@ export function arrayToSet(arr: string[]): Set;
 
 }
 
-declare module 'typescript-project-services/lib/workingSet' {
+declare module 'tspms/lib/workingSet' {
 
-import promise = require('typescript-project-services/lib/promise');
-import utils = require('typescript-project-services/lib/utils');
+import promise = require('tspms/lib/promise');
+import utils = require('tspms/lib/utils');
 import ISignal = utils.ISignal;
 /**
  * A service that will reflect files in the working set of the editor.
@@ -723,16 +723,16 @@ export type DocumentChangeRecord = {
 
 }
 
-declare module 'typescript-project-services' {
+declare module 'tspms' {
 
 import ts = require('typescript');
-import promise = require('typescript-project-services/lib/promise');
-import ProjectManager = require('typescript-project-services/lib/projectManager');
-import fs = require('typescript-project-services/lib/fileSystem');
-import ws = require('typescript-project-services/lib/workingSet');
-import project = require('typescript-project-services/lib/project');
-import Logger = require('typescript-project-services/lib/logger');
-import utils = require('typescript-project-services/lib/utils');
+import promise = require('tspms/lib/promise');
+import ProjectManager = require('tspms/lib/projectManager');
+import fs = require('tspms/lib/fileSystem');
+import ws = require('tspms/lib/workingSet');
+import project = require('tspms/lib/project');
+import Logger = require('tspms/lib/logger');
+import utils = require('tspms/lib/utils');
 /**
  * Let the user inject logger used by the service.
  *

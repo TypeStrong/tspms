@@ -75,7 +75,7 @@ module.exports = function (grunt) {
                     var declarationFiles = grunt.file.expand(['lib/*.d.ts', '!lib/index.d.ts']);
                     var cmd = (
                         "node ./scripts/concat-declaration " + 
-                        "--moduleName typescript-project-services " +
+                        "--moduleName tspms " +
                         "--mainFile lib/index.d.ts " +
                         declarationFiles.join(' ') +
                         "> ./index.d.ts "
@@ -93,7 +93,7 @@ module.exports = function (grunt) {
                     ]);
                     var cmd = (
                         "node ./scripts/generate-doc " + 
-                        "--moduleName typescript-project-services " +
+                        "--moduleName tspms " +
                         "--docDir ./doc " +
                         "--mainFile src/main/index.ts " +
                         src.join(' ') +

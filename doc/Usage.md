@@ -37,9 +37,9 @@ tspms.injectLogger(
 
 ## ISignal
 
-Events in the module are generally dispatched/consumed through the [`ISignal`](https://github.com/TypeStrong/typescript-project-services/blob/master/doc/API.md#isignal) interface, 
+Events in the module are generally dispatched/consumed through the [`ISignal`](./API.md#isignal) interface, 
 this interface describe a typed event system close to the C# one.  
-You can find a reference implementation of this interface in the [`utils.ts`](https://github.com/TypeStrong/typescript-project-services/blob/master/src/main/utils.ts#L171-L250) file.
+You can find a reference implementation of this interface in the [`utils.ts`](../src/main/utils.ts#L171-L250) file.
 
 ## The IFileSystem interface
 
