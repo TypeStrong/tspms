@@ -433,6 +433,12 @@ export class Promise<R> implements Thenable<R> {
     static all<T>(promises: (Thenable<T> | T)[]): Promise<T[]>;
     static race<T>(promises: (Thenable<T> | T)[]): Promise<T>;
 }
+/**
+ * Let the user inject Promise library used by the service,
+ * it must be an es6 spec comliant promise library
+ *
+ * @param promise the Promise constructor of the injected library.
+ */
 export function injectPromiseLibrary(promise: typeof Promise): void;
 
 
