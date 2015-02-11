@@ -265,6 +265,36 @@ Retrieve emit output for a file name
 
 ## Types
 
+### ProjectManagerConfig
+
+see [projectManager.ts](../src/main/projectManager.ts#L36-L56).
+  
+
+
+```
+export type ProjectManagerConfig  = {
+    /**
+     * Absolute fileName of the `lib.d.ts` file associated to the bundled compiler.
+     */
+    defaultLibFileName: string;
+    
+    /**
+     * The file system wrapper instance used by this module.
+     */
+    fileSystem: fs.IFileSystem;
+    
+    /**
+     * Working set service.
+     */
+    workingSet: ws.IWorkingSet;
+    
+    /**
+     * A Map project name to project configuration
+     */
+    projectConfigs: { [projectId: string]: TypeScriptProjectConfig; };
+}
+```
+
 ### IFileSystem
 
 see [fileSystem.ts](../src/main/fileSystem.ts#L17-L40).
@@ -295,6 +325,26 @@ export interface IFileSystem {
      * @param fileName the name of file to read.
      */
     readFile(fileName: string): promise.Promise<string>;
+}
+```
+
+### FileChangeRecord
+
+see [fileSystem.ts](../src/main/fileSystem.ts#L76-L86).
+  
+
+
+```
+export type FileChangeRecord = {
+    /**
+     * kind of change.
+     */
+    kind: FileChangeKind;
+    
+    /**
+     * The name of the file that have changed if any.
+     */
+    fileName?: string;
 }
 ```
 
@@ -353,6 +403,83 @@ export interface IWorkingSet {
 }
 ```
 
+### DocumentChangeDescriptor
+
+see [workingSet.ts](../src/main/workingSet.ts#L79-L101).
+  
+
+
+```
+export type DocumentChangeDescriptor = {
+    
+    /**
+     * Start position of the change.
+     */
+    from?: number;
+    
+    /**
+     * End positon of the change.
+     */
+    to?: number;
+    
+    /**
+     * The text that has been inserted (if any).
+     */
+    text?: string;
+    
+    /**
+     * The text that has been removed (if any).
+     */
+    removed?: string;
+
+}
+```
+
+### DocumentChangeRecord
+
+see [workingSet.ts](../src/main/workingSet.ts#L109-L124).
+  
+
+
+```
+export type DocumentChangeRecord = {
+    /**
+     * absolute file name of the files that has changed.
+     */
+    fileName: string;
+    
+    /**
+     * The list of changes that occured in the file.
+     */
+    changeList?: DocumentChangeDescriptor[];
+    
+    /**
+     * The new text of the file.
+     */
+    documentText?: string
+}
+```
+
+### WorkingSetChangeRecord
+
+see [workingSet.ts](../src/main/workingSet.ts#L43-L53).
+  
+
+
+```
+export type WorkingSetChangeRecord = {
+    /**
+     * The kind of change that occured in the working set.
+     */
+    kind: WorkingSetChangeKind;
+    
+    /**
+     * The list of paths that has been added or removed from the working set.
+     */
+    fileNames: string[];
+}
+```
+
 ### WorkingSetChangeKind
 
 see [workingSet.ts](../src/main/workingSet.ts#L58-L68).
@@ -370,6 +497,31 @@ export const enum WorkingSetChangeKind {
      * A file has been removed from the working set.
      */
     REMOVE
+}
+```
+
+### TypeScriptProjectConfig
+
+see [project.ts](../src/main/project.ts#L26-L41).
+  
+
+
+```
+export type TypeScriptProjectConfig = {
+    /**
+     * Patterns used for glob matching sources file of the project
+     */
+    sources: string[] | string;
+    
+    /**
+     * Compiler options
+     */
+    compilerOptions: ts.CompilerOptions;
+        
+    /**
+     * Absolute path of the compiler directory
+     */
+    compilerDirectory?: string;
 }
 ```
 
