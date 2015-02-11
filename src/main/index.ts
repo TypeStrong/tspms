@@ -24,7 +24,7 @@ import utils = require('./utils');
  * @param warn warning logger.
  * @param error error logger.
  */
-export var injectLogger = Logger.injectLogger;
+export import injectLogger = Logger.injectLogger;
 
 //--------------------------------------------------------------------------
 //
@@ -37,7 +37,7 @@ export var injectLogger = Logger.injectLogger;
  * 
  * @param promise the Promise constructor of the injected library.
  */
-export var injectPromiseLibrary = promise.injectPromiseLibrary;
+export import injectPromiseLibrary = promise.injectPromiseLibrary;
 
 //--------------------------------------------------------------------------
 //
