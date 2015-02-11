@@ -1,4 +1,4 @@
-# tspsm - TypeScript ProjectManager Service 
+# TypeScript ProjectManager Service 
 
 > An abstraction on top [TypeScript](http://www.typescriptlang.org/) language service, that let you consume it in the context of a project.
 
