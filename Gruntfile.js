@@ -50,6 +50,18 @@ module.exports = function (grunt) {
                     sourceMap: false,
                     declaration: true
                 }
+            },
+            
+            generate_doc: {
+                src: ['scripts/generate-doc.ts'],
+                dest: 'scripts',
+                options: {
+                    sourceMap: false,
+                    noImplicitAny: false,
+                    preserveConstEnums: false,
+                    noLib: false,
+                    basePath: 'scripts'
+                }
             }
         },
         
@@ -71,6 +83,25 @@ module.exports = function (grunt) {
                     console.log(cmd);
                     return cmd;
                 }
+            },
+            generate_doc: {
+                command: function () {
+                    var src = grunt.file.expand([
+                        'src/declarations/*.d.ts', 
+                        'src/main/**/*.ts',
+                        '!src/main/index.d.ts'
+                    ]);
+                    var cmd = (
+                        "node ./scripts/generate-doc " + 
+                        "--moduleName typescript-project-services " +
+                        "--docDir ./doc " +
+                        "--mainFile src/main/index.ts " +
+                        src.join(' ') +
+                        "> ./doc/API.md"
+                    );
+                    console.log(cmd);
+                    return cmd;
+                }
             }
         }
         
@@ -79,10 +110,11 @@ module.exports = function (grunt) {
     grunt.registerTask('test', 'exec:jest');
     grunt.registerTask('coverage', 'exec:jest_coverage');
     grunt.registerTask('test-debug', 'exec:jest_debug');
+    grunt.registerTask('generate_doc', ['typescript:generate_doc', 'exec:generate_doc']);
     
-    grunt.registerTask('release', ['clean:lib', 'typescript:release', 'exec:concat_declarations', 'clean:declarations' ]);
+    grunt.registerTask('release', ['clean:lib', 'typescript:release', 'exec:concat_declarations', 'clean:declarations', 'generate_doc' ]);
     grunt.registerTask('test-promise', ['clean:built', 'typescript:dev','exec:test_promise' ]);
     
-     grunt.registerTask('default', ['clean:built', 'typescript:dev', 'test']);
+    grunt.registerTask('default', ['clean:built', 'typescript:dev', 'test']);
     
 };

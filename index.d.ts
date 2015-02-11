@@ -734,14 +734,14 @@ import utils = require('typescript-project-services/lib/utils');
  * @param warn warning logger.
  * @param error error logger.
  */
-export var injectLogger: typeof Logger.injectLogger;
+export import injectLogger = Logger.injectLogger;
 /**
  * Let the user inject Promise library used by the service,
  * it must be an es6 spec comliant promise library
  *
  * @param promise the Promise constructor of the injected library.
  */
-export var injectPromiseLibrary: typeof promise.injectPromiseLibrary;
+export import injectPromiseLibrary = promise.injectPromiseLibrary;
 /**
  * ProjectManager configuration
  */
